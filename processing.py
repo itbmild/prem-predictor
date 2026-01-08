@@ -65,40 +65,55 @@ Need a way to query the data, for example, get all games where hometeam = man ci
 
 import os
 import pandas as pd
-from utils import PROCESSED_FULL_DATA_PATH, PROCESSED_YEARLY_DATA_DIR, RAW_DATA_DIR, LEAGUE_STANDINGS_DIR, STARTING_YEAR
+from utils import PROCESSED_FULL_DATA_PATH, PROCESSED_DATA_DIR, RAW_DATA_DIR, LEAGUE_STANDINGS_DIR, STARTING_YEAR
 
 class DataProcessor:
+    COLS_TO_KEEP = [
+                        "Date", "HomeTeam", "AwayTeam", 
+                        "FTHG", "FTAG", "HS", "AS",
+                        "HST", "AST"
+        ]
+    
     def __init__(self):
-        
         # need to load the data if we havent already loaded and processed
         if os.path.isfile(PROCESSED_FULL_DATA_PATH):
             # load the csv file using pandas
             self.full_data = pd.read_csv(PROCESSED_FULL_DATA_PATH)
             self.yearly_data = self._read_yearly_csv()
-            
         else:
             # instantiate list of dataframes, one for each season
             self.raw_data_frames = self._get_season_frames()
             self.process_data()
-    
+
     ## HELPER FUNCTIONS
     def process_data(self):
-        self._save_season_standings_csv(self.raw_data_frames[8])
+        self._save_season_standings_csv()
         # processes raw data and saves CSVs for yearly and aggregated
+        self._process_seasons()
+        
         self._process_full()
-        self._process_yearly()
         
     def _process_full(self):
+        # remove unwanted columns from raw data and save to CSV file
+        # # concatenate seasons into one dataframe
+        # df_full = pd.concat(self.raw_data_frames)
+        # print(df_full)
         pass
+        
 
-    def _process_yearly(self):
-        pass
+    def _process_seasons(self):
+        year = STARTING_YEAR
+        for i in self.raw_data_frames:
+            # keep frames we want
+            season = i[self.COLS_TO_KEEP]
+            season.to_csv(os.path.join(PROCESSED_DATA_DIR, f'match-data-{year}.csv'))
+            year += 1
 
     def _read_yearly_csv(self):
         pass
 
     """ Uses raw data for each season to create end of season table """
-    def _save_season_standings_csv(self, season: pd.DataFrame):
+    def _save_season_standings_csv(self):
         """
         Takes raw data from all seasons, then saves
         table results as a CSV files at specified directory in utils
@@ -122,7 +137,6 @@ class DataProcessor:
             GF = ("FTHG", "sum"),
             GA = ("FTAG", "sum")
         )
-
         away_stats = season.groupby("AwayTeam").agg(
             MP = ("FTAG", "count"),
             W = ("FTR", lambda x: (x == 'A').sum()),
