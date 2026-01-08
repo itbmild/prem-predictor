@@ -65,7 +65,7 @@ Need a way to query the data, for example, get all games where hometeam = man ci
 
 import os
 import pandas as pd
-from utils import PROCESSED_FULL_DATA_PATH, PROCESSED_YEARLY_DATA_DIR, RAW_DATA_DIR, LEAGUE_STANDINGS_DIR
+from utils import PROCESSED_FULL_DATA_PATH, PROCESSED_YEARLY_DATA_DIR, RAW_DATA_DIR, LEAGUE_STANDINGS_DIR, STARTING_YEAR
 
 class DataProcessor:
     def __init__(self):
@@ -83,7 +83,7 @@ class DataProcessor:
     
     ## HELPER FUNCTIONS
     def process_data(self):
-        self._generate_season_standings(self.raw_data_frames[8])
+        self._save_season_standings_csv(self.raw_data_frames[8])
         # processes raw data and saves CSVs for yearly and aggregated
         self._process_full()
         self._process_yearly()
@@ -98,14 +98,17 @@ class DataProcessor:
         pass
 
     """ Uses raw data for each season to create end of season table """
-    def _generate_season_standings(self, season: pd.DataFrame):
+    def _save_season_standings_csv(self, season: pd.DataFrame):
         """
         Takes raw data from all seasons, then saves
         table results as a CSV files at specified directory in utils
         """
-        season_df = self._create_season_dataframe(season)
-        print(season_df)
-    
+        year = STARTING_YEAR
+        for i in self.raw_data_frames:
+            season_df = self._create_season_dataframe(i)
+            season_df.to_csv(os.path.join(LEAGUE_STANDINGS_DIR, f'league-standings-{year}.csv'))
+            year += 1
+ 
     def _create_season_dataframe(self, season: pd.DataFrame) -> pd.DataFrame:
         """
         Takes individual season raw data as a dataframe and returns
@@ -146,17 +149,6 @@ class DataProcessor:
             # need to append a new dataframe for each season
             frames.append(pd.read_csv(os.path.join(RAW_DATA_DIR, season)))
         return frames
-    
-""" Current table standings of a specific team, used for generation of season table """
-class Standing:
-    def __init__(self, team_name):
-        self.team_name = team_name
-        self.points = 0
-        self.wins = 0
-        self.losses = 0
-        self.goals_for = 0
-        self.goals_against = 0
-        self.goal_diff = 0
     
 if __name__ == "__main__":
     proc = DataProcessor()
