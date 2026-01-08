@@ -61,8 +61,6 @@ Team Points GF GA GD W D L
 
 How? use the raw data
 Need a way to query the data, for example, get all games where hometeam = man city
-
-
 """
 
 import os
@@ -85,7 +83,7 @@ class DataProcessor:
     
     ## HELPER FUNCTIONS
     def process_data(self):
-        self._generate_standings()
+        self._generate_season_standings(self.raw_data_frames[8])
         # processes raw data and saves CSVs for yearly and aggregated
         self._process_full()
         self._process_yearly()
@@ -100,8 +98,40 @@ class DataProcessor:
         pass
 
     """ Uses raw data for each season to create end of season table """
-    def _generate_standings(self):
-        pass
+    def _generate_season_standings(self, season: pd.DataFrame):
+        """
+        Takes raw data from all seasons, then saves
+        table results as a CSV files at specified directory in utils
+        """
+        season_df = self._create_season_dataframe(season)
+        print(season_df)
+    
+    def _create_season_dataframe(self, season: pd.DataFrame) -> pd.DataFrame:
+        """
+        Takes individual season raw data as a dataframe and returns
+        dataframe containing the final standings of that season
+        """
+        home_stats = season.groupby("HomeTeam").agg(
+            MP =("FTHG", "count"),
+            W = ("FTR", lambda x: (x == 'H').sum()),
+            D = ("FTR", lambda x: (x == 'D').sum()),
+            L = ("FTR", lambda x: (x == 'A').sum()),
+            GF = ("FTHG", "sum"),
+            GA = ("FTAG", "sum")
+        )
+
+        away_stats = season.groupby("AwayTeam").agg(
+            MP = ("FTAG", "count"),
+            W = ("FTR", lambda x: (x == 'A').sum()),
+            D = ("FTR", lambda x: (x == 'D').sum()),
+            L = ("FTR", lambda x: (x == 'H').sum()),
+            GF = ("FTAG", "sum"),
+            GA = ("FTHG", "sum")
+        )
+        standings = home_stats + away_stats
+        standings["GD"] = standings["GF"] - standings["GA"]
+        standings["PTS"] = standings["W"] * 3 + standings["D"] * 1
+        return standings.sort_values("PTS", ascending=False)
 
     def _clear_dir(self, dir):
         # iterates through directory and deletes all of the files
@@ -116,6 +146,17 @@ class DataProcessor:
             # need to append a new dataframe for each season
             frames.append(pd.read_csv(os.path.join(RAW_DATA_DIR, season)))
         return frames
-        
+    
+""" Current table standings of a specific team, used for generation of season table """
+class Standing:
+    def __init__(self, team_name):
+        self.team_name = team_name
+        self.points = 0
+        self.wins = 0
+        self.losses = 0
+        self.goals_for = 0
+        self.goals_against = 0
+        self.goal_diff = 0
+    
 if __name__ == "__main__":
     proc = DataProcessor()
