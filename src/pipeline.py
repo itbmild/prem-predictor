@@ -14,6 +14,9 @@ COLS_TO_KEEP = [
                         "HST", "AST", "FTR"
         ]
 
+PROCESSED_DATA_DIR = './data/processed/processed_yearly'
+STARTING_YEAR = 2015
+
 class DataPipeline:
     def __init__(self, loader: Loader, transformer: DataTransformer, writer: Writer):
         self.loader = loader
@@ -34,7 +37,10 @@ class DataPipeline:
         per_team = self.transformer.batch(per_team, lambda s: self.transformer.add_form(s, 5))
 
         # add features for each season
-        seasons = self.transformer.add_features(seasons, per_team, standings)    
+        seasons = self.transformer.add_features(seasons, per_team, standings)
+
+        # save seasons to file
+        self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR)   
 
 if __name__ == "__main__":
     transformer = DataTransformer()

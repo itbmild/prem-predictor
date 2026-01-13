@@ -15,6 +15,12 @@ class Writer:
         except Exception as e:
             print(f"could not save to specified directory with exception: {e}")
 
+    def batch_save_to_dir(self, dfs: list[pd.DataFrame], dir: str, starting_year: int):
+        year = starting_year
+        for df in dfs:
+            self.save_to_dir(df, dir, f"processed-season-{year}")
+            year += 1
+        
 if __name__ == "__main__":
     loader = Loader('./data/raw')
     files = loader.get_files()
