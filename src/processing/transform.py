@@ -145,5 +145,39 @@ class DataTransformer:
             right_on=["Date", "Team"],
             how="left"
         ).rename(columns={"Form": "AwayForm"}).drop("Team", axis=1)
-
         return matches
+
+    def merge_points(self, matches: pd.DataFrame, table: pd.DataFrame):
+        """ takes in a season and merges the teams previous points """
+        join_on = table[["Team", "PTS"]]
+        matches = matches.merge(
+            join_on,
+            left_on=["HomeTeam"],
+            right_on=["Team"],
+            how="left"
+        ).rename(columns={"PTS": "HomePrevPTS"}).drop("Team", axis=1)
+
+        matches=matches.merge(
+            join_on,
+            left_on=["AwayTeam"],
+            right_on=["Team"],
+            how="left"
+        ).rename(columns={"PTS": "AwayPrevPTS"}).drop("Team", axis=1)
+        return matches
+
+    def add_features(self, seasons, per_team, standings) -> pd.DataFrame:
+        """ 
+        Takes match data and aggregates data from supplementary standings and per_team tables
+        To produce features
+        """
+        for i in range(len(seasons)):
+            season = seasons[i]
+            team_season = per_team[i]
+            table = standings[i]
+
+            season = self.merge_form(season, team_season)
+            season = self.merge_points(season, table)
+            seasons[i] = season
+
+        return seasons
+        

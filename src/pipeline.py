@@ -28,30 +28,13 @@ class DataPipeline:
 
         standings = self.transformer.batch(seasons, self.transformer.get_standings)
         seasons = self.transformer.batch(seasons, lambda s: self.transformer.clean(s, COLS_TO_KEEP))
+
+        # prepare per_team stats for aggregations
         per_team = self.transformer.batch(seasons, self.transformer.build_per_team)
+        per_team = self.transformer.batch(per_team, lambda s: self.transformer.add_form(s, 5))
 
-
-        
-        per_team[0] = self.transformer.add_form(per_team[0], 5)
-
-        ###
-        # need to put the form into each match somehow, i.e.
-        # matches -> go to the per_team col and find that specific match -> add form into our match
-        # merge form accepts the raw match data from one season, and adds the home form for each match
-
-
-
-        example_matches = seasons[0]
-
-        # print("--------------------- BEFORE MERGE ---------------------")
-        # print(example_matches)
-        print(per_team[0].query("Team == 'Sunderland'"))
-
-        example_matches = self.transformer.merge_form(example_matches, per_team[0])
-        print("------------------- AFTER MERGE ---------------------")
-        print(example_matches[30:40])
-
-        ###
+        # add features for each season
+        seasons = self.transformer.add_features(seasons, per_team, standings)    
 
 if __name__ == "__main__":
     transformer = DataTransformer()
