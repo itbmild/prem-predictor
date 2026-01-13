@@ -2,7 +2,6 @@
 import pandas as pd
 from pathlib import Path
 
-
 class Loader:
     """
     Loads Premier league season as dataframe given filepath
@@ -16,17 +15,16 @@ class Loader:
         except FileNotFoundError as e:
             raise Exception(f"File not found: {e}")
 
+    def load_batch(self, filepaths: list[str]) -> list[pd.DataFrame]:
+        seasons = []
+        for path in filepaths:
+            raw_season = self.load(path)
+            seasons.append(raw_season)
+        return seasons
+
     def get_files(self) -> list:
         """ returns list of filepath for CSV files """
         # need to open the directory, return the files as a list
         return list(Path(self.dir_path).glob("*.csv"))
-
-if __name__ == "__main__":
-    loader = Loader('./data/raw')
-
-    files = loader.get_files()
-    test = loader.load(files[0])
-
-    print(test)
-
     
+        
