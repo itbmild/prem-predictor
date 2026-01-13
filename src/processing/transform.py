@@ -1,25 +1,34 @@
 """ Class for cleaning dataset (creates season table and removes unwanted cols from data) """
 import pandas as pd
+from _collections_abc import Callable
 
 class DataTransformer:
     def _convert_to_datetime(self, match_data: pd.DataFrame) -> pd.DataFrame:
-        match_data["Date"] = pd.to_datetime(match_data["Date"], dayfirst=True)
+        match_data["Date"] = pd.to_datetime(match_data["Date"], format="mixed", dayfirst=True)
         return match_data
     
     def _remove_cols(self, match_data: pd.DataFrame, target_cols: list):
         # here is where we keep certain columns
         return match_data[target_cols]
     
-    def clean(self, match_data: pd.DataFrame) -> pd.DataFrame:
+    def clean(self, match_data: pd.DataFrame, target_cols: list) -> pd.DataFrame:
         match_data = self._convert_to_datetime(match_data)
-        match_data = self._remove_cols(match_data)
+        match_data = self._remove_cols(match_data, target_cols)
         return match_data
 
-    def add_form(self, season: pd.DataFrame):
-        # need to compute form of each match by considering the x previous matches
-        # for matches that are at the beginning of the season, we can 'bleed over' into the matches from the season prior
-        pass
-
+    def add_form(self, per_team: pd.DataFrame, num_matches: int) -> pd.DataFrame:
+        """ takes per team data and adds the form of that match"""
+        per_team = per_team.sort_values(['Team', 'Date'])
+        rolling_pts = (
+            per_team.groupby("Team")["PTS"]
+            .rolling(window=num_matches, min_periods=1)
+            .sum()
+            .values
+        )
+        per_team["_tmp_rolling"] = rolling_pts
+        per_team["Form"] = per_team.groupby("Team")["_tmp_rolling"].shift(1)
+        return per_team.drop(columns=["_tmp_rolling"]).fillna(0).reset_index(drop=True)
+       
     def add_pts(self, season_matches: pd.DataFrame, season_table: pd.DataFrame) -> pd.DataFrame:
         """ append previous seasons points to each match for both home and away team """
         # need to find a way to query the league table from the season before
@@ -69,7 +78,7 @@ class DataTransformer:
         season_matches["Form"] = per_team.rolling(num_matches).sum()
         return season_matches
        
-    def build_per_team_matches(self, matches:pd.DataFrame) -> pd.DataFrame:
+    def build_per_team(self, matches:pd.DataFrame) -> pd.DataFrame:
         """ Takes match data and produces dataframe to allow for easier aggregation of features """
         home = pd.DataFrame({
             "Date": matches["Date"],
@@ -103,5 +112,38 @@ class DataTransformer:
             clean_seasons.append(cleaned)
         return clean_seasons
     
-    def batch_build_per_team(self, seasons: list[pd.DataFrame]):
-        pass
+    def batch_build_per_team(self, seasons: list[pd.DataFrame]) -> list[pd.DataFrame]:
+        per_team_seasons = []
+        for season in seasons:
+            per_team = self.build_per_team(season)
+            per_team_seasons.append(per_team)
+        return per_team_seasons
+    
+    def batch(self, list: list, callable: Callable):
+        """ 
+        takes atomic transformation method and applies to input list
+        returns accumulated transformed list
+        """
+        acc = []
+        for item in list:
+            atom = callable(item)
+            acc.append(atom)
+        return acc
+    
+    def merge_form(self, matches: pd.DataFrame, per_team: pd.DataFrame) -> pd.DataFrame:
+        join_on = per_team[["Date", "Team", "Form"]]
+        matches = matches.merge(
+            join_on,
+            left_on=["Date", "HomeTeam"],
+            right_on=["Date", "Team"],
+            how="left"
+        ).rename(columns={"Form": "HomeForm"}).drop("Team", axis=1)
+
+        matches = matches.merge(
+            join_on,
+            left_on=["Date", "AwayTeam"],
+            right_on=["Date", "Team"],
+            how="left"
+        ).rename(columns={"Form": "AwayForm"}).drop("Team", axis=1)
+
+        return matches

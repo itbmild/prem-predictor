@@ -25,14 +25,33 @@ class DataPipeline:
         # load match data from files
         files = self.loader.get_files()
         seasons = self.loader.load_batch(files)
+
+        standings = self.transformer.batch(seasons, self.transformer.get_standings)
+        seasons = self.transformer.batch(seasons, lambda s: self.transformer.clean(s, COLS_TO_KEEP))
+        per_team = self.transformer.batch(seasons, self.transformer.build_per_team)
+
+
         
-        standings = self.transformer.get_batch_standings(seasons)
-        seasons = self.transformer.batch_clean_seasons(files)
-        per_team = self.transformer.batch_build_per_team(seasons)
+        per_team[0] = self.transformer.add_form(per_team[0], 5)
 
-        per_team = self.transformer.build_per_team_matches(seasons[0])
+        ###
+        # need to put the form into each match somehow, i.e.
+        # matches -> go to the per_team col and find that specific match -> add form into our match
+        # merge form accepts the raw match data from one season, and adds the home form for each match
 
-        print(per_team.sort_values(["Team", "Date"], ascending=[True, True])[0:40])
+
+
+        example_matches = seasons[0]
+
+        # print("--------------------- BEFORE MERGE ---------------------")
+        # print(example_matches)
+        print(per_team[0].query("Team == 'Sunderland'"))
+
+        example_matches = self.transformer.merge_form(example_matches, per_team[0])
+        print("------------------- AFTER MERGE ---------------------")
+        print(example_matches[30:40])
+
+        ###
 
 if __name__ == "__main__":
     transformer = DataTransformer()
