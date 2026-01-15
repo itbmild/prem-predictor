@@ -6,8 +6,6 @@ class Loader:
     """
     Loads Premier league season as dataframe given filepath
     """
-    def __init__(self, directory_path: str):
-        self.dir_path = directory_path
 
     def load(self, file_path) -> pd.DataFrame:
         try:
@@ -21,10 +19,18 @@ class Loader:
             raw_season = self.load(path)
             seasons.append(raw_season)
         return seasons
+    
+    def load_batch_concat(self, filepaths: list[str]) -> list[pd.DataFrame]:
+        """ Takes list of filepaths and returns concatenated dataframe """
+        df = pd.DataFrame()
+        for path in filepaths:
+            season = self.load(path)
+            pd.concat([df, season])
+        return df
 
-    def get_files(self) -> list:
+    def get_files(self, filepath: str) -> list:
         """ returns list of filepath for CSV files """
         # need to open the directory, return the files as a list
-        return list(Path(self.dir_path).glob("*.csv"))
+        return list(Path(filepath).glob("*.csv"))
     
         

@@ -14,8 +14,20 @@ COLS_TO_KEEP = [
                         "HST", "AST", "FTR"
         ]
 
+RAW_DATA_DIR = './data/raw'
 PROCESSED_DATA_DIR = './data/processed/processed_yearly'
 STARTING_YEAR = 2015
+PROCESSED_FULL_DATA_PATH = './data/processed/processed_full'
+FULL_MATCH_DATA_NAME = 'prem-data(2015-2025).csv'
+
+TRAIN_DATA_PATH = "./data/processed/training"
+TRAIN_DATA_FILENAME = "train_set.csv"
+
+VAL_DATA_PATH = "./data/processed/validation"
+VAL_DATA_FILENAME = "val_set.csv"
+
+TEST_DATA_PATH = "./data/processed/test"
+TEST_DATA_FILENAME = "test_set.csv"
 
 class DataPipeline:
     def __init__(self, loader: Loader, transformer: DataTransformer, writer: Writer):
@@ -26,7 +38,7 @@ class DataPipeline:
     def run(self):
         """ Runs full data pipeline """
         # load match data from files
-        files = self.loader.get_files()
+        files = self.loader.get_files(RAW_DATA_DIR)
         seasons = self.loader.load_batch(files)
 
         standings = self.transformer.batch(seasons, self.transformer.get_standings)
@@ -40,12 +52,20 @@ class DataPipeline:
         seasons = self.transformer.add_features(seasons, per_team, standings)
 
         # save seasons to file
-        self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR)   
+        self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR)  
+        seasons_concat = self.transformer.concat_dfs(seasons)
+
+        self.writer.save_to_dir(seasons_concat, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
+
+        train_df, val_df, test_df = self.transformer.get_splits(seasons, 0.7, 0.1, 0.2)
+        self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
+        self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
+        self.writer.save_to_dir(test_df, TEST_DATA_PATH, TEST_DATA_FILENAME)
+
 
 if __name__ == "__main__":
     transformer = DataTransformer()
-    features = FeatureTransformer()
-    loader = Loader('./data/raw')
+    loader = Loader()
     writer = Writer()
 
     dp = DataPipeline(loader, transformer, writer)

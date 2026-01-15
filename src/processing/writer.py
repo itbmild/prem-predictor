@@ -20,11 +20,3 @@ class Writer:
         for df in dfs:
             self.save_to_dir(df, dir, f"processed-season-{year}")
             year += 1
-        
-if __name__ == "__main__":
-    loader = Loader('./data/raw')
-    files = loader.get_files()
-    test = loader.load(files[0])
-
-    writer = Writer()
-    writer.save_to_dir(test, './data/processed/processed_yearly', 'prem-season-2015.csv')

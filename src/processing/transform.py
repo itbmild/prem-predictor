@@ -180,4 +180,20 @@ class DataTransformer:
             seasons[i] = season
 
         return seasons
-           
+
+    def concat_dfs(self, dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """ Takes list of dataframes and returns concatentation of list """
+        return pd.concat(dfs, axis=0, ignore_index=True)
+    
+    def get_splits(self, dfs: list[pd.DataFrame], train_split: float, val_split: float, test_split: float):
+        """ Takes list of dataframes and test splits as percentages and returns tuple with splits """
+        
+        total_dfs = len(dfs)
+        train_split_cutoff = int(total_dfs * train_split)
+        val_split_cutoff = int(train_split_cutoff + (total_dfs * val_split))
+
+        train_set = pd.concat(dfs[:train_split_cutoff])
+        val_set = pd.concat(dfs[train_split_cutoff: val_split_cutoff])
+        test_set = pd.concat(dfs[val_split_cutoff:])
+
+        return (train_set, val_set, test_set)
