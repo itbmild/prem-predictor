@@ -6,7 +6,6 @@ class Loader:
     """
     Loads Premier league season as dataframe given filepath
     """
-
     def load(self, file_path) -> pd.DataFrame:
         try:
             return pd.read_csv(file_path)

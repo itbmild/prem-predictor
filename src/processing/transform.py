@@ -71,7 +71,9 @@ class DataTransformer:
         standings = standings.reset_index().rename(columns={"HomeTeam" : "Team"})
         standings["GD"] = standings["GF"] - standings["GA"]
         standings["PTS"] = standings["W"] * 3 + standings["D"] * 1
-        return standings.sort_values("PTS", ascending=False)
+        standings = standings.sort_values("PTS", ascending=False).reset_index(drop=True)
+        standings["Position"] = standings.index + 1
+        return standings
 
     def rolling_form(self, season_matches: pd.DataFrame, per_team: pd.DataFrame, num_matches: int) -> pd.DataFrame:
         """ adds column for form over the last 5 matches for home and away team """
@@ -165,35 +167,65 @@ class DataTransformer:
         ).rename(columns={"PTS": "AwayPrevPTS"}).drop("Team", axis=1)
         return matches
 
+    def merge_position(self, matches: pd.DataFrame, table: pd.DataFrame):
+        """ 
+            Takes matches from a given season, and a league table from the previous season
+            Adds column to match data containing previous league table finish
+            Clubs promoted in given season are given points from 18th place team in prev season
+        """
+        join_on = table[["Team", "Position"]] 
+        # merge home team position
+        matches = matches.merge(
+            join_on,
+            left_on=["HomeTeam"],
+            right_on=["Team"],
+            how="left"
+        ).rename(columns={"Position": "HomePrevPos"}).drop("Team", axis=1)
+
+        # merge away team position
+        matches = matches.merge(
+            join_on,
+            left_on=["AwayTeam"],
+            right_on=["Team"],
+            how="left"
+        ).rename(columns={"Position": "AwayPrevPos"}).drop("Team", axis=1)
+        return matches
+
     def add_features(self, seasons, per_team, standings) -> pd.DataFrame:
         """ 
         Takes match data and aggregates data from supplementary standings and per_team tables
         To produce features
         """
-        for i in range(len(seasons)):
+        # current implementation iterates through each season
+        # WE DONT WANT THIS
+        # WHAT WE WANT:
+        # ignore the first season, and only apply aggregation to second onwards
+        # how do we do this 
+
+        for i in range(1,len(seasons)):
+            # we need to skip the first season
+            
             season = seasons[i]
             team_season = per_team[i]
-            table = standings[i]
+            table = standings[i-1]
 
+            # last X games features
             season = self.merge_form(season, team_season)
-            season = self.merge_points(season, table)
-            seasons[i] = season
 
+            # last season features
+            season = self.merge_points(season, table)
+            season = self.merge_position(season, table)
+            seasons[i] = season
         return seasons
 
     def concat_dfs(self, dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """ Takes list of dataframes and returns concatentation of list """
         return pd.concat(dfs, axis=0, ignore_index=True)
-    
-    def get_splits(self, dfs: list[pd.DataFrame], train_split: float, val_split: float, test_split: float):
-        """ Takes list of dataframes and test splits as percentages and returns tuple with splits """
         
-        total_dfs = len(dfs)
-        train_split_cutoff = int(total_dfs * train_split)
-        val_split_cutoff = int(train_split_cutoff + (total_dfs * val_split))
+    def get_splits(self, dfs: list[pd.DataFrame], train_samples: int, val_samples: int, test_samples: int):
+        train_set = pd.concat(dfs[1:train_samples+1])
+        val_set = pd.concat(dfs[:train_samples+1:val_samples+train_samples])
+        test_set = pd.concat(dfs[val_samples+train_samples:])
 
-        train_set = pd.concat(dfs[:train_split_cutoff])
-        val_set = pd.concat(dfs[train_split_cutoff: val_split_cutoff])
-        test_set = pd.concat(dfs[val_split_cutoff:])
-
+        print(len(train_set))
         return (train_set, val_set, test_set)

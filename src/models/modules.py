@@ -1,16 +1,18 @@
 """ Neural Network modules for 2 layer perceptron """
 import torch.nn as nn
+import torch
 
 class BasicBlock(nn.Module):
     def __init__(self, in_features, out_features):
         super(BasicBlock, self).__init__()
         self.block = nn.Sequential(
             nn.Linear(in_features, out_features),
-            nn.ReLU(),
+            nn.LeakyReLU(),
         )
     
     def forward(self, x):
         return self.block(x)
+    
 
 class NeuralNet(nn.Module):
     def __init__(self, input_dims, inter_dims, output_dims=2):
@@ -24,5 +26,6 @@ class NeuralNet(nn.Module):
         x = self.block1(x)
         x = self.block2(x)
         x = self.regression(x)
+        x = torch.nn.functional.softplus(x)
         return x
     

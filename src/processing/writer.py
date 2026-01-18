@@ -15,8 +15,8 @@ class Writer:
         except Exception as e:
             print(f"could not save to specified directory with exception: {e}")
 
-    def batch_save_to_dir(self, dfs: list[pd.DataFrame], dir: str, starting_year: int):
+    def batch_save_to_dir(self, dfs: list[pd.DataFrame], dir: str, starting_year: int, filename: str):
         year = starting_year
         for df in dfs:
-            self.save_to_dir(df, dir, f"processed-season-{year}")
+            self.save_to_dir(df, dir, f"{filename}-{year}")
             year += 1

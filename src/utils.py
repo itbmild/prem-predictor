@@ -9,3 +9,4 @@ PREM_LABELS = ["FTHG", "FTAG"]
 TRAIN_DATA_PATH = "./data/processed/training/train_set.csv"
 VAL_DATA_PATH = "./data/processed/validation/val_set.csv"
 TEST_DATA_PATH = "./data/processed/test/test_set.csv"
+MODEL_PATH = "./trained_model/NN_trained.pth"

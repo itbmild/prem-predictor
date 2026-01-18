@@ -13,6 +13,10 @@ COLS_TO_KEEP = [
                         "FTHG", "FTAG", "HS", "AS",
                         "HST", "AST", "FTR"
         ]
+STANDINGS_DIR = './data/processed/standings_yearly'
+
+PROCESSED_PREFIX = 'prem-data'
+STANDINGS_PREFIX = 'standings'
 
 RAW_DATA_DIR = './data/raw'
 PROCESSED_DATA_DIR = './data/processed/processed_yearly'
@@ -42,6 +46,7 @@ class DataPipeline:
         seasons = self.loader.load_batch(files)
 
         standings = self.transformer.batch(seasons, self.transformer.get_standings)
+        self.writer.batch_save_to_dir(standings, STANDINGS_DIR, STARTING_YEAR, STANDINGS_PREFIX)
         seasons = self.transformer.batch(seasons, lambda s: self.transformer.clean(s, COLS_TO_KEEP))
 
         # prepare per_team stats for aggregations
@@ -50,14 +55,16 @@ class DataPipeline:
 
         # add features for each season
         seasons = self.transformer.add_features(seasons, per_team, standings)
+        # print(seasons)
 
         # save seasons to file
-        self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR)  
+        self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR, PROCESSED_PREFIX) 
+
         seasons_concat = self.transformer.concat_dfs(seasons)
 
         self.writer.save_to_dir(seasons_concat, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
 
-        train_df, val_df, test_df = self.transformer.get_splits(seasons, 0.7, 0.1, 0.2)
+        train_df, val_df, test_df = self.transformer.get_splits(seasons, 6, 1, 2)
         self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
         self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
         self.writer.save_to_dir(test_df, TEST_DATA_PATH, TEST_DATA_FILENAME)
