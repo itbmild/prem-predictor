@@ -158,6 +158,10 @@ class DataTransformer:
             right_on=["Team"],
             how="left"
         ).rename(columns={"PTS": "HomePrevPTS"}).drop("Team", axis=1)
+        promoted_baseline = table.loc[17, "PTS"]
+        matches["HomePrevPTS"] = matches["HomePrevPTS"].fillna(promoted_baseline)
+        # need to merge with points from third worst team from prev season
+
 
         matches=matches.merge(
             join_on,
@@ -165,6 +169,8 @@ class DataTransformer:
             right_on=["Team"],
             how="left"
         ).rename(columns={"PTS": "AwayPrevPTS"}).drop("Team", axis=1)
+        matches["AwayPrevPTS"] = matches["AwayPrevPTS"].fillna(promoted_baseline)
+        print(matches)
         return matches
 
     def merge_position(self, matches: pd.DataFrame, table: pd.DataFrame):
@@ -181,6 +187,7 @@ class DataTransformer:
             right_on=["Team"],
             how="left"
         ).rename(columns={"Position": "HomePrevPos"}).drop("Team", axis=1)
+        matches["HomePrevPos"] = matches["HomePrevPos"].fillna(18)
 
         # merge away team position
         matches = matches.merge(
@@ -189,6 +196,7 @@ class DataTransformer:
             right_on=["Team"],
             how="left"
         ).rename(columns={"Position": "AwayPrevPos"}).drop("Team", axis=1)
+        matches["AwayPrevPos"] = matches["AwayPrevPos"].fillna(18)
         return matches
 
     def add_features(self, seasons, per_team, standings) -> pd.DataFrame:
@@ -227,5 +235,4 @@ class DataTransformer:
         val_set = pd.concat(dfs[:train_samples+1:val_samples+train_samples])
         test_set = pd.concat(dfs[val_samples+train_samples:])
 
-        print(len(train_set))
         return (train_set, val_set, test_set)
