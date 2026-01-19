@@ -20,7 +20,7 @@ class DataTransformer:
         """ takes per team data and adds the form of that match"""
         per_team = per_team.sort_values(['Team', 'Date'])
         rolling_pts = (
-            per_team.groupby("Team")["PTS"]
+            per_team.groupby("Team")["formPTS"]
             .rolling(window=num_matches, min_periods=1)
             .sum()
             .values
@@ -86,14 +86,14 @@ class DataTransformer:
             "Date": matches["Date"],
             "Team": matches["HomeTeam"],
             "Opponent": matches["AwayTeam"],
-            "PTS": matches["FTR"].map({"H": 3, "D": 1, "A": 0}),
+            "formPTS": matches["FTR"].map({"H": 3, "D": 1, "A": 0}),
             "isHome": 1
         })
         away = pd.DataFrame({
             "Date": matches["Date"],
             "Team": matches["AwayTeam"],
             "Opponent": matches["HomeTeam"],
-            "PTS": matches["FTR"].map({"H": 0, "D": 1, "A": 3}),
+            "formPTS": matches["FTR"].map({"H": 0, "D": 1, "A": 3}),
             "isHome": 0
         })
         return pd.concat([home,away], ignore_index=True)
@@ -133,6 +133,13 @@ class DataTransformer:
         return acc
     
     def merge_form(self, matches: pd.DataFrame, per_team: pd.DataFrame) -> pd.DataFrame:
+        # return self.join_home_away(
+        #     matches,
+        #     per_team,
+        #     cols=["Date", "Team", "Form"],
+        #     home_col="HomeForm",
+        #     away_col="AwayForm"
+        # )
         join_on = per_team[["Date", "Team", "Form"]]
         matches = matches.merge(
             join_on,
@@ -151,27 +158,16 @@ class DataTransformer:
 
     def merge_points(self, matches: pd.DataFrame, table: pd.DataFrame):
         """ takes in a season and merges the teams previous points """
-        join_on = table[["Team", "PTS"]]
-        matches = matches.merge(
-            join_on,
-            left_on=["HomeTeam"],
-            right_on=["Team"],
-            how="left"
-        ).rename(columns={"PTS": "HomePrevPTS"}).drop("Team", axis=1)
-        promoted_baseline = table.loc[17, "PTS"]
-        matches["HomePrevPTS"] = matches["HomePrevPTS"].fillna(promoted_baseline)
-        # need to merge with points from third worst team from prev season
-
-
-        matches=matches.merge(
-            join_on,
-            left_on=["AwayTeam"],
-            right_on=["Team"],
-            how="left"
-        ).rename(columns={"PTS": "AwayPrevPTS"}).drop("Team", axis=1)
-        matches["AwayPrevPTS"] = matches["AwayPrevPTS"].fillna(promoted_baseline)
-        print(matches)
-        return matches
+        # let prev points be that of previous 18th place team
+        baseline = table.loc[17, "PTS"] 
+        return self.join_home_away(
+            matches,
+            table,
+            cols=["Team", "PTS"],
+            home_col="HomePrevPTS",
+            away_col="AwayPrevPTS",
+            fill=baseline
+        )
 
     def merge_position(self, matches: pd.DataFrame, table: pd.DataFrame):
         """ 
@@ -179,60 +175,122 @@ class DataTransformer:
             Adds column to match data containing previous league table finish
             Clubs promoted in given season are given points from 18th place team in prev season
         """
-        join_on = table[["Team", "Position"]] 
-        # merge home team position
-        matches = matches.merge(
-            join_on,
-            left_on=["HomeTeam"],
-            right_on=["Team"],
-            how="left"
-        ).rename(columns={"Position": "HomePrevPos"}).drop("Team", axis=1)
-        matches["HomePrevPos"] = matches["HomePrevPos"].fillna(18)
+        fill = 18 # assume finished at top of relegation zone for promoted sides
+        return self.join_home_away(
+            matches, 
+            table, 
+            cols=["Team", "Position"],
+            home_col="HomePrevPos",
+            away_col="AwayPrevPos",
+            fill=fill
+        )
 
-        # merge away team position
-        matches = matches.merge(
-            join_on,
-            left_on=["AwayTeam"],
-            right_on=["Team"],
-            how="left"
-        ).rename(columns={"Position": "AwayPrevPos"}).drop("Team", axis=1)
-        matches["AwayPrevPos"] = matches["AwayPrevPos"].fillna(18)
-        return matches
+    # def add_features(self, seasons, per_team, standings) -> pd.DataFrame:
+    #     """ 
+    #     Takes match data and aggregates data from supplementary standings and per_team tables
+    #     To produce features
+    #     """
+    #     # current implementation iterates through each season
+    #     # WE DONT WANT THIS
+    #     # WHAT WE WANT:
+    #     # ignore the first season, and only apply aggregation to second onwards
+    #     # how do we do this 
 
-    def add_features(self, seasons, per_team, standings) -> pd.DataFrame:
-        """ 
-        Takes match data and aggregates data from supplementary standings and per_team tables
-        To produce features
-        """
-        # current implementation iterates through each season
-        # WE DONT WANT THIS
-        # WHAT WE WANT:
-        # ignore the first season, and only apply aggregation to second onwards
-        # how do we do this 
-
-        for i in range(1,len(seasons)):
-            # we need to skip the first season
+    #     for i in range(1,len(seasons)):
+    #         # we need to skip the first season
             
-            season = seasons[i]
-            team_season = per_team[i]
-            table = standings[i-1]
+    #         season = seasons[i]
+    #         team_season = per_team[i]
+    #         table = standings[i-1]
 
-            # last X games features
-            season = self.merge_form(season, team_season)
+    #         # last X games features
+    #         season = self.merge_form(season, team_season)
 
-            # last season features
-            season = self.merge_points(season, table)
-            season = self.merge_position(season, table)
-            seasons[i] = season
-        return seasons
+    #         # last season features
+    #         season = self.merge_points(season, table)
+    #         season = self.merge_position(season, table)
+    #         seasons[i] = season
+
+    #         print(per_team[0])
+    #     return seasons
 
     def concat_dfs(self, dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """ Takes list of dataframes and returns concatentation of list """
         return pd.concat(dfs, axis=0, ignore_index=True)
         
     def get_splits(self, dfs: list[pd.DataFrame], train_samples: int, val_samples: int, test_samples: int):
-        train_set = pd.concat(dfs[1:train_samples+1])
-        val_set = pd.concat(dfs[:train_samples+1:val_samples+train_samples])
-        test_set = pd.concat(dfs[val_samples+train_samples:])
+        train_set = pd.concat(dfs[1:train_samples + 1])
+        val_set = pd.concat(dfs[train_samples + 1:val_samples + train_samples + 1])
+        test_set = pd.concat(dfs[1 + val_samples + train_samples : train_samples + val_samples+ test_samples + 1])
 
         return (train_set, val_set, test_set)
+
+    def join_home_away(self, matches: pd.DataFrame, table: pd.DataFrame, cols: list, home_col: str, away_col: str, fill=None) -> pd.DataFrame:
+        join_on = table[cols]
+        # merge for Home team
+        matches = matches.merge(
+            join_on,
+            left_on=["HomeTeam"],
+            right_on=["Team"],
+            how="left"
+        ).rename(columns={cols[1]: home_col}).drop("Team", axis=1)
+
+        # merge for away team
+        matches = matches.merge(
+            join_on,
+            left_on=["AwayTeam"],
+            right_on=["Team"],
+            how="left"
+        ).rename(columns={cols[1]: away_col}).drop("Team", axis=1)
+
+        if fill is not None:
+            matches[home_col] = matches[home_col].fillna(fill)
+            matches[away_col] = matches[away_col].fillna(fill)
+        return matches
+    
+    def join_current_season(self, matches: pd.DataFrame, per_match: pd.DataFrame):
+        pass
+
+    def add_features(self, team_matches: pd.DataFrame, table: pd.DataFrame) -> pd.DataFrame:
+        """
+        Takes long form of matches (2 rows per match) and adds features for each team in each match
+        Returns long form dataframe for all matches containing features.
+        """
+        team_matches = self.add_prev_pts(team_matches, table)
+        return team_matches
+
+    def reformat_matches_long(self, matches_long: pd.DataFrame) -> pd.DataFrame:
+        """
+        Docstring for reformat_matches_long
+        
+        :param self: Description
+        :param matches_long: Description
+        :type matches_long: pd.DataFrame
+        :return: Description
+        :rtype: DataFrame
+        """
+
+        pass
+
+    def add_prev_pts(self, matches_long: pd.DataFrame, table: pd.DataFrame):
+        """ 
+        Takes matches in per_team format and adds column for points in previous season
+        Teams that were promoted in the current season are assigned points of 18th place
+        Team from previous season as a baseline
+        """
+        baseline = table["PTS"].loc[17]
+        matches_long = matches_long.merge(
+            table[["Team", "PTS"]],
+            left_on=["Team"],
+            right_on=["Team"],
+            how="left"
+        ).rename(columns={"PTS": "prevPTS"})
+        matches_long = matches_long.fillna(baseline)
+        return matches_long
+
+    def batch_add_features(self, team_matches_list: list[pd.DataFrame], tables_list: list[pd.DataFrame]):
+        for i in range(1, len(team_matches_list)):
+            season = team_matches_list[i]
+            previous_table = tables_list[i-1]
+            team_matches_list[i] = self.add_features(season, previous_table)
+        return team_matches_list

@@ -1,8 +1,6 @@
 PREM_FEATURES = ["HomeForm", "AwayForm", "HomePrevPTS", "AwayPrevPTS"]
 PREM_LABELS = ["FTHG", "FTAG"]
 
-
-
 """
 need to add more features.
 

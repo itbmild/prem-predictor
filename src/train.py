@@ -26,7 +26,7 @@ def main():
     model = NeuralNet(4,64,2)
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=decay)
-    num_epochs=100
+    num_epochs=500
     
     trainer = Trainer(model, train_loader, val_loader, criterion, optimizer, device)
     trainer.train(num_epochs)

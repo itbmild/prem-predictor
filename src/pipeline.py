@@ -33,6 +33,8 @@ VAL_DATA_FILENAME = "val_set.csv"
 TEST_DATA_PATH = "./data/processed/test"
 TEST_DATA_FILENAME = "test_set.csv"
 
+PER_MATCH_PATH = "./data/processed/per_team"
+
 class DataPipeline:
     def __init__(self, loader: Loader, transformer: DataTransformer, writer: Writer):
         self.loader = loader
@@ -49,13 +51,29 @@ class DataPipeline:
         self.writer.batch_save_to_dir(standings, STANDINGS_DIR, STARTING_YEAR, STANDINGS_PREFIX)
         seasons = self.transformer.batch(seasons, lambda s: self.transformer.clean(s, COLS_TO_KEEP))
 
+        ###################################
         # prepare per_team stats for aggregations
         per_team = self.transformer.batch(seasons, self.transformer.build_per_team)
         per_team = self.transformer.batch(per_team, lambda s: self.transformer.add_form(s, 5))
 
+
+
+        
+        per_team = self.transformer.batch_add_features(per_team, standings)
         # add features for each season
-        seasons = self.transformer.add_features(seasons, per_team, standings)
-        # print(seasons)
+        # seasons = self.transformer.add_features(seasons, per_team, standings)
+        
+        #################################
+        # idea is per team is one row per match per team
+        # so if we do all operations on the per team table
+        # we have ourselves our feature table
+        # we dont even need our raw table any more for single match
+
+
+
+        self.writer.batch_save_to_dir(per_team, PER_MATCH_PATH, 2015, 'per-team')
+
+        ####################################
 
         # save seasons to file
         self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR, PROCESSED_PREFIX) 
@@ -68,6 +86,8 @@ class DataPipeline:
         self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
         self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
         self.writer.save_to_dir(test_df, TEST_DATA_PATH, TEST_DATA_FILENAME)
+
+
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ class PremierLeagueDataset(Dataset):
         self.loader = Loader()
         self.match_path = match_path
         self.matches = self.loader.load(match_path)
+        print(self.matches)
         self.features = self.matches[PREM_FEATURES]
         self.labels = self.matches[PREM_LABELS]
 
