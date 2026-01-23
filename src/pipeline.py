@@ -4,7 +4,6 @@
 """
 from processing.loader import Loader
 from processing.writer import Writer
-from processing.features import FeatureTransformer
 from processing.transform import DataTransformer
 import pandas as pd
 
@@ -14,13 +13,11 @@ COLS_TO_KEEP = [
                         "HST", "AST", "FTR"
         ]
 STANDINGS_DIR = './data/processed/standings_yearly'
-
 PROCESSED_PREFIX = 'prem-data'
 STANDINGS_PREFIX = 'standings'
-
 RAW_DATA_DIR = './data/raw'
 PROCESSED_DATA_DIR = './data/processed/processed_yearly'
-STARTING_YEAR = 2015
+STARTING_YEAR = 2008
 PROCESSED_FULL_DATA_PATH = './data/processed/processed_full'
 FULL_MATCH_DATA_NAME = 'prem-data(2015-2025).csv'
 
@@ -56,38 +53,24 @@ class DataPipeline:
         per_team = self.transformer.batch(seasons, self.transformer.build_per_team)
         per_team = self.transformer.batch(per_team, lambda s: self.transformer.add_form(s, 5))
 
-
-
-        
         per_team = self.transformer.batch_add_features(per_team, standings)
+        per_team = self.transformer.batch_add_WDL(per_team)
         # add features for each season
         # seasons = self.transformer.add_features(seasons, per_team, standings)
         
-        #################################
-        # idea is per team is one row per match per team
-        # so if we do all operations on the per team table
-        # we have ourselves our feature table
-        # we dont even need our raw table any more for single match
-
-
-
-        self.writer.batch_save_to_dir(per_team, PER_MATCH_PATH, 2015, 'per-team')
-
-        ####################################
-
+        self.writer.batch_save_to_dir(per_team, PER_MATCH_PATH, STARTING_YEAR, 'per-team')
         # save seasons to file
         self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR, PROCESSED_PREFIX) 
 
-        seasons_concat = self.transformer.concat_dfs(seasons)
+        # seasons_concat = self.transformer.concat_dfs(seasons)
+        inputs = self.transformer.concat_dfs(per_team)
 
-        self.writer.save_to_dir(seasons_concat, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
+        self.writer.save_to_dir(inputs, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
 
-        train_df, val_df, test_df = self.transformer.get_splits(seasons, 6, 1, 2)
+        train_df, val_df, test_df = self.transformer.get_splits(per_team, 11, 2, 3)
         self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
         self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
         self.writer.save_to_dir(test_df, TEST_DATA_PATH, TEST_DATA_FILENAME)
-
-
 
 
 if __name__ == "__main__":

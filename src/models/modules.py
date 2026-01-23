@@ -20,11 +20,13 @@ class NeuralNet(nn.Module):
         
         self.block1 = BasicBlock(input_dims, inter_dims)
         self.block2 = BasicBlock(inter_dims, inter_dims)
-        self.regression = nn.Linear(inter_dims, output_dims)
+        self.block3 = BasicBlock(inter_dims, inter_dims)
+        self.regression = nn.Linear(inter_dims , output_dims)
 
     def forward(self, x):
         x = self.block1(x)
         x = self.block2(x)
+        x = self.block3(x)
         x = self.regression(x)
         x = torch.nn.functional.softplus(x)
         return x

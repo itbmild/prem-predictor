@@ -1,5 +1,13 @@
-PREM_FEATURES = ["HomeForm", "AwayForm", "HomePrevPTS", "AwayPrevPTS"]
+# PREM_FEATURES = ["HomeForm", "AwayForm", "HomePrevPTS", "AwayPrevPTS"]
+PREM_FEATURES = [
+    "Form_home", "prevPTS_home", "W_home", "D_home", "L_home",
+    "GF_home", "GA_home", "YC_home", "RC_home",
+    "Form_away", "prevPTS_away", "W_away", "D_away", "L_away",
+    "GF_away", "GA_away", "YC_away", "RC_away"
+    ]
 PREM_LABELS = ["FTHG", "FTAG"]
+
+PREM_EVAL_LABELS = ["W", "D", "L"]
 
 """
 need to add more features.
@@ -7,15 +15,15 @@ need to add more features.
 Types of features: From last season, last x games, against x opponent
 
 From Last Season:
-    Position
-    Wins
-    Draws
-    Losses
-    Total Points
-    Goals For
-    Goals Against
-    Red Cards
-    Yellow Cards
+    X Position         
+    X Wins
+    X Draws
+    X Losses
+    X Total Points
+    X Goals For
+    X Goals Against
+    X Red Cards
+    X Yellow Cards
     Average Big Chances
     Average Shots Leading to Goals
     Average Shots on target
@@ -24,7 +32,7 @@ From Last Season:
 Last X Games:
     Average Shots leading to Goals
     Average Shots on target
-    Average Points
+    # Average Points
     Average Ycards
     Average RCards
     Average Goals

@@ -57,7 +57,10 @@ class DataTransformer:
             D = ("FTR", lambda x: (x == 'D').sum()),
             L = ("FTR", lambda x: (x == 'A').sum()),
             GF = ("FTHG", "sum"),
-            GA = ("FTAG", "sum")
+            GA = ("FTAG", "sum"),
+            YC = ("HY", "sum"),
+            RC = ("HR", "sum")
+
         )
         away_stats = season.groupby("AwayTeam").agg(
             MP = ("FTAG", "count"),
@@ -65,7 +68,9 @@ class DataTransformer:
             D = ("FTR", lambda x: (x == 'D').sum()),
             L = ("FTR", lambda x: (x == 'H').sum()),
             GF = ("FTAG", "sum"),
-            GA = ("FTHG", "sum")
+            GA = ("FTHG", "sum"),
+            YC = ("AY", "sum"),
+            RC = ("AR", "sum")
         )
         standings = home_stats + away_stats
         standings = standings.reset_index().rename(columns={"HomeTeam" : "Team"})
@@ -87,14 +92,18 @@ class DataTransformer:
             "Team": matches["HomeTeam"],
             "Opponent": matches["AwayTeam"],
             "formPTS": matches["FTR"].map({"H": 3, "D": 1, "A": 0}),
-            "isHome": 1
+            "isHome": 1,
+            "FTHG": matches["FTHG"],
+            "FTAG": matches["FTAG"]
         })
         away = pd.DataFrame({
             "Date": matches["Date"],
             "Team": matches["AwayTeam"],
             "Opponent": matches["HomeTeam"],
             "formPTS": matches["FTR"].map({"H": 0, "D": 1, "A": 3}),
-            "isHome": 0
+            "isHome": 0,
+            "FTHG": matches["FTHG"],
+            "FTAG": matches["FTAG"]
         })
         return pd.concat([home,away], ignore_index=True)
     
@@ -257,20 +266,34 @@ class DataTransformer:
         Returns long form dataframe for all matches containing features.
         """
         team_matches = self.add_prev_pts(team_matches, table)
+        team_matches = self.reformat_matches(team_matches)
         return team_matches
 
-    def reformat_matches_long(self, matches_long: pd.DataFrame) -> pd.DataFrame:
+    def reformat_matches(self, team_matches: pd.DataFrame) -> pd.DataFrame:
         """
-        Docstring for reformat_matches_long
-        
-        :param self: Description
-        :param matches_long: Description
-        :type matches_long: pd.DataFrame
-        :return: Description
-        :rtype: DataFrame
+        Takes matches in long format (2 rows per match) and formats in the form of 
+        HomeTeam features + AwayTeam Features
         """
+        cols_to_drop = [
+            "Team_away", "Opponent_away",
+            "isHome_home", "isHome_away",
+            "FTHG_away", "FTAG_away"
+        ]
+        # we have a table of the form 
+        # Date,Team,Opponent,formPTS,isHome,Form,prevPTS,W,D,L,GF,GA,YC,RC
+        # we want to prefix home to all these, and prefix away for the away
+        home_matches = team_matches[team_matches["isHome"] == 1].copy()
+        away_matches = team_matches[team_matches["isHome"] == 0].copy()
 
-        pass
+        matches_full = home_matches.merge(
+            away_matches,
+            left_on=["Date", "Team", "Opponent"],
+            right_on=["Date", "Opponent", "Team"],
+            suffixes=["_home", "_away"]
+        ).rename(columns={"team_home": "HomeTeam", "Opponent_home": "AwayTeam", "FTHG_home": "FTHG", "FTAG_home": "FTAG"})
+        matches_full = matches_full.drop(columns=cols_to_drop)
+
+        return matches_full
 
     def add_prev_pts(self, matches_long: pd.DataFrame, table: pd.DataFrame):
         """ 
@@ -278,19 +301,47 @@ class DataTransformer:
         Teams that were promoted in the current season are assigned points of 18th place
         Team from previous season as a baseline
         """
-        baseline = table["PTS"].loc[17]
+        baseline = table[["PTS", "W", "D", "L", "GF", "GA", "YC", "RC"]].loc[17]
+        cols = ["PTS", "W", "D", "L", "GF", "GA", "YC", "RC"]
+
+        baseline_row = table.loc[17, cols]
+        fill_dict = {col: baseline[col] for col in cols}
+
         matches_long = matches_long.merge(
-            table[["Team", "PTS"]],
+            table[["Team", "PTS", "W", "D", "L", "GF", "GA", "YC", "RC"]],
             left_on=["Team"],
             right_on=["Team"],
             how="left"
-        ).rename(columns={"PTS": "prevPTS"})
-        matches_long = matches_long.fillna(baseline)
+        )
+        matches_long[cols] = matches_long[cols].fillna(baseline_row)
+        matches_long = matches_long.rename(columns={"PTS": "prevPTS"})
         return matches_long
 
     def batch_add_features(self, team_matches_list: list[pd.DataFrame], tables_list: list[pd.DataFrame]):
         for i in range(1, len(team_matches_list)):
             season = team_matches_list[i]
             previous_table = tables_list[i-1]
-            team_matches_list[i] = self.add_features(season, previous_table)
+            season = self.add_features(season, previous_table)
+            season = season.sort_values("Date", ascending=True)
+            team_matches_list[i] = season
+            
+
         return team_matches_list
+    
+    def batch_add_WDL(self, matches_list: list[pd.DataFrame]) -> list[pd.DataFrame]:
+        for i in range(len(matches_list)):
+            match = matches_list[i]
+            match = self.add_WDL(match)
+            matches_list[i] = match
+
+
+        return matches_list
+
+
+    def add_WDL(self, matches: pd.DataFrame):
+        # need to add W, D and L columns.
+
+        matches["W"] = (matches["FTHG"] > matches["FTAG"]).astype(int)
+        matches["D"] = (matches["FTHG"] == matches["FTAG"]).astype(int)
+        matches["L"] = (matches["FTHG"] < matches["FTAG"]).astype(int)
+        return matches

@@ -2,13 +2,14 @@ import torch
 
 class Trainer:
     """ Class for training premier league prediction model """
-    def __init__(self, model, train_loader, val_loader, criterion, optimizer, device):
+    def __init__(self, model, train_loader, val_loader, criterion, optimizer, device, scheduler):
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
+        self.scheduler = scheduler
         self.train_losses = []
         self.val_losses = []
 
@@ -32,6 +33,7 @@ class Trainer:
                 loss.backward()
                 self.optimizer.step()
 
+
             loss_acc += loss.item()
         return loss_acc / len(loader)
 
@@ -39,6 +41,8 @@ class Trainer:
         for epoch in range(epochs):
             train_loss = self._run_epoch(self.train_loader, training=True)
             val_loss = self._run_epoch(self.val_loader, training=False)
+
+            self.scheduler.step()
 
             self.train_losses.append(train_loss)
             self.val_losses.append(val_loss)

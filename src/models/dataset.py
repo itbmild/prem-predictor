@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
-from .constants import PREM_FEATURES, PREM_LABELS
+from .constants import PREM_FEATURES, PREM_LABELS, PREM_EVAL_LABELS
 from processing.loader import Loader
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
@@ -9,13 +9,19 @@ class PremierLeagueDataset(Dataset):
     """
     Stores match data for each premier league season
     """
-    def __init__(self, match_path):
+    def __init__(self, match_path, eval=False):
         self.loader = Loader()
         self.match_path = match_path
         self.matches = self.loader.load(match_path)
-        print(self.matches)
         self.features = self.matches[PREM_FEATURES]
-        self.labels = self.matches[PREM_LABELS]
+        if eval:
+            self.labels = self.matches[PREM_EVAL_LABELS]
+        else:
+            self.labels = self.matches[PREM_LABELS]
+
+      
+        # nan_cols = self.features.columns[self.features.isna().any()]
+        # print("Columns with NaNs:", nan_cols.tolist())
 
     def __len__(self):
         return len(self.matches)
@@ -31,7 +37,7 @@ class PremierLeagueDataset(Dataset):
     
 class PLDataModule:
     """ Class for managing dataloaders to NN model """
-    def __init__(self, train_path, val_path, test_path, batch_size=64):
+    def __init__(self, train_path="", val_path="", test_path="", batch_size=64):
         self.train_path = train_path
         self.val_path = val_path
         self.test_path = test_path
@@ -47,5 +53,5 @@ class PLDataModule:
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
     def get_test_loader(self):
-        dataset = PremierLeagueDataset(self.test_path)
+        dataset = PremierLeagueDataset(self.test_path, eval=True)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False) 
