@@ -38,40 +38,49 @@ class DataPipeline:
         self.transformer = transformer
         self.writer = writer
 
-    def run(self):
-        """ Runs full data pipeline """
-        # load match data from files
+    def _get_raw_data(self):
         files = self.loader.get_files(RAW_DATA_DIR)
         seasons = self.loader.load_batch(files)
+        return seasons
 
-        standings = self.transformer.batch(seasons, self.transformer.get_standings)
+    def _transform_data(self, raw_seasons):
+        standings = self.transformer.batch(raw_seasons, self.transformer.get_standings)
+
+        cleaned_seasons = self.transformer.batch(raw_seasons, lambda s: self.transformer.clean(s, COLS_TO_KEEP))
+
+        processed_seasons, per_team_matches = self.transformer.transform(
+            cleaned_seasons,
+            standings
+        )
+
+        return processed_seasons, per_team_matches, standings
+
+    def _save_data(self, processed_seasons, per_team_matches, standings):
+        """
+        Takes processed data and saves standings, processed match data (per team and input format) to specified directories
+        """
         self.writer.batch_save_to_dir(standings, STANDINGS_DIR, STARTING_YEAR, STANDINGS_PREFIX)
-        seasons = self.transformer.batch(seasons, lambda s: self.transformer.clean(s, COLS_TO_KEEP))
 
-        ###################################
-        # prepare per_team stats for aggregations
-        per_team = self.transformer.batch(seasons, self.transformer.build_per_team)
-        per_team = self.transformer.batch(per_team, lambda s: self.transformer.add_form(s, 5))
+        self.writer.batch_save_to_dir(per_team_matches, PER_MATCH_PATH, STARTING_YEAR, 'per-team')
+        self.writer.batch_save_to_dir(processed_seasons, PROCESSED_DATA_DIR, STARTING_YEAR, PROCESSED_PREFIX)
 
-        per_team = self.transformer.batch_add_features(per_team, standings)
-        per_team = self.transformer.batch_add_WDL(per_team)
-        # add features for each season
-        # seasons = self.transformer.add_features(seasons, per_team, standings)
-        
-        self.writer.batch_save_to_dir(per_team, PER_MATCH_PATH, STARTING_YEAR, 'per-team')
-        # save seasons to file
-        self.writer.batch_save_to_dir(seasons, PROCESSED_DATA_DIR, STARTING_YEAR, PROCESSED_PREFIX) 
-
-        # seasons_concat = self.transformer.concat_dfs(seasons)
-        inputs = self.transformer.concat_dfs(per_team)
-
+        inputs = self.transformer.concat_dfs(per_team_matches)
         self.writer.save_to_dir(inputs, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
 
-        train_df, val_df, test_df = self.transformer.get_splits(per_team, 11, 2, 3)
+        train_df, val_df, test_df = self.transformer.get_splits(per_team_matches, 11, 2, 3)
         self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
         self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
         self.writer.save_to_dir(test_df, TEST_DATA_PATH, TEST_DATA_FILENAME)
 
+    def run(self):
+        # Get raw data with loader
+        raw_seasons = self._get_raw_data()
+
+        # Transform Data
+        processed_seasons, per_team_matches, standings = self._transform_data(raw_seasons)
+
+        # Save Processed Data
+        self._save_data(processed_seasons, per_team_matches, standings)
 
 if __name__ == "__main__":
     transformer = DataTransformer()

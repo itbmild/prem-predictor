@@ -1,15 +1,25 @@
 """ Class for cleaning dataset (creates season table and removes unwanted cols from data) """
 import pandas as pd
 from _collections_abc import Callable
+COLS_TO_KEEP = [
+                "Date", "HomeTeam", "AwayTeam", 
+                "FTHG", "FTAG", "HS", "AS",
+                "HST", "AST", "FTR"
+        ]
+
+
 
 class DataTransformer:
+
+
     def _convert_to_datetime(self, match_data: pd.DataFrame) -> pd.DataFrame:
+
         match_data["Date"] = pd.to_datetime(match_data["Date"], format="mixed", dayfirst=True)
         return match_data
     
     def _remove_cols(self, match_data: pd.DataFrame, target_cols: list):
         # here is where we keep certain columns
-        return match_data[target_cols]
+        return match_data[target_cols].copy()
     
     def clean(self, match_data: pd.DataFrame, target_cols: list) -> pd.DataFrame:
         match_data = self._convert_to_datetime(match_data)
@@ -194,35 +204,6 @@ class DataTransformer:
             fill=fill
         )
 
-    # def add_features(self, seasons, per_team, standings) -> pd.DataFrame:
-    #     """ 
-    #     Takes match data and aggregates data from supplementary standings and per_team tables
-    #     To produce features
-    #     """
-    #     # current implementation iterates through each season
-    #     # WE DONT WANT THIS
-    #     # WHAT WE WANT:
-    #     # ignore the first season, and only apply aggregation to second onwards
-    #     # how do we do this 
-
-    #     for i in range(1,len(seasons)):
-    #         # we need to skip the first season
-            
-    #         season = seasons[i]
-    #         team_season = per_team[i]
-    #         table = standings[i-1]
-
-    #         # last X games features
-    #         season = self.merge_form(season, team_season)
-
-    #         # last season features
-    #         season = self.merge_points(season, table)
-    #         season = self.merge_position(season, table)
-    #         seasons[i] = season
-
-    #         print(per_team[0])
-    #     return seasons
-
     def concat_dfs(self, dfs: list[pd.DataFrame]) -> pd.DataFrame:
         """ Takes list of dataframes and returns concatentation of list """
         return pd.concat(dfs, axis=0, ignore_index=True)
@@ -337,7 +318,6 @@ class DataTransformer:
 
         return matches_list
 
-
     def add_WDL(self, matches: pd.DataFrame):
         # need to add W, D and L columns.
 
@@ -345,3 +325,21 @@ class DataTransformer:
         matches["D"] = (matches["FTHG"] == matches["FTAG"]).astype(int)
         matches["L"] = (matches["FTHG"] < matches["FTAG"]).astype(int)
         return matches
+    
+    def transform(self, seasons, standings):
+        """
+        Main entrypoint for processing, performs all necessary processing and adds features to data
+        """
+        seasons_processed = self.batch(seasons, lambda s: self.clean(s, COLS_TO_KEEP))
+
+        # convert usual format to per team format 
+        per_team_processed = self.batch(seasons_processed, self.build_per_team)
+
+        # add rolling features and include previous standings dat
+        per_team_processed = self.batch(per_team_processed, lambda s: self.add_form(s, 5))
+        per_team_processed = self.batch_add_features(per_team_processed, standings)
+        per_team_processed = self.batch_add_WDL(per_team_processed)
+
+        return seasons_processed, per_team_processed
+
+
