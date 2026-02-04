@@ -10,10 +10,10 @@ COLS_TO_KEEP = [
 
 
 class DataTransformer:
-
+    def __init__(self, feature_steps=[]):
+        self.feature_steps = feature_steps
 
     def _convert_to_datetime(self, match_data: pd.DataFrame) -> pd.DataFrame:
-
         match_data["Date"] = pd.to_datetime(match_data["Date"], format="mixed", dayfirst=True)
         return match_data
     
@@ -69,7 +69,8 @@ class DataTransformer:
             GF = ("FTHG", "sum"),
             GA = ("FTAG", "sum"),
             YC = ("HY", "sum"),
-            RC = ("HR", "sum")
+            RC = ("HR", "sum"),
+            SOT = ("HST", "sum")
 
         )
         away_stats = season.groupby("AwayTeam").agg(
@@ -80,14 +81,17 @@ class DataTransformer:
             GF = ("FTAG", "sum"),
             GA = ("FTHG", "sum"),
             YC = ("AY", "sum"),
-            RC = ("AR", "sum")
+            RC = ("AR", "sum"),
+            SOT = ("AST", "sum")
         )
+
         standings = home_stats + away_stats
         standings = standings.reset_index().rename(columns={"HomeTeam" : "Team"})
         standings["GD"] = standings["GF"] - standings["GA"]
         standings["PTS"] = standings["W"] * 3 + standings["D"] * 1
         standings = standings.sort_values("PTS", ascending=False).reset_index(drop=True)
         standings["Position"] = standings.index + 1
+        standings["AVG_SOT"] = (standings["SOT"] / standings["MP"]) * 0.7
         return standings
 
     def rolling_form(self, season_matches: pd.DataFrame, per_team: pd.DataFrame, num_matches: int) -> pd.DataFrame:
@@ -282,14 +286,14 @@ class DataTransformer:
         Teams that were promoted in the current season are assigned points of 18th place
         Team from previous season as a baseline
         """
-        baseline = table[["PTS", "W", "D", "L", "GF", "GA", "YC", "RC"]].loc[17]
-        cols = ["PTS", "W", "D", "L", "GF", "GA", "YC", "RC"]
+        baseline = table[["PTS", "W", "D", "L", "GF", "GA", "YC", "RC", "AVG_SOT"]].loc[17]
+        cols = ["PTS", "W", "D", "L", "GF", "GA", "YC", "RC", "AVG_SOT"]
 
         baseline_row = table.loc[17, cols]
         fill_dict = {col: baseline[col] for col in cols}
 
         matches_long = matches_long.merge(
-            table[["Team", "PTS", "W", "D", "L", "GF", "GA", "YC", "RC"]],
+            table[["Team", "PTS", "W", "D", "L", "GF", "GA", "YC", "RC", "AVG_SOT"]],
             left_on=["Team"],
             right_on=["Team"],
             how="left"
@@ -299,6 +303,7 @@ class DataTransformer:
         return matches_long
 
     def batch_add_features(self, team_matches_list: list[pd.DataFrame], tables_list: list[pd.DataFrame]):
+        # add all previous season features
         for i in range(1, len(team_matches_list)):
             season = team_matches_list[i]
             previous_table = tables_list[i-1]
@@ -306,6 +311,8 @@ class DataTransformer:
             season = season.sort_values("Date", ascending=True)
             team_matches_list[i] = season
             
+        # add aggregate features based on rolling window
+
 
         return team_matches_list
     
@@ -330,16 +337,41 @@ class DataTransformer:
         """
         Main entrypoint for processing, performs all necessary processing and adds features to data
         """
+        # new logic for strategy pattern
+        processed_seasons = []
+
+        for i, season_df in enumerate(seasons):
+            curr_df = season_df.copy()
+
+            prev_standings = standings[i-1] if i > 0 else None
+
+            for step in self.feature_steps:
+                 pass
+
+
+
+        ####################
         seasons_processed = self.batch(seasons, lambda s: self.clean(s, COLS_TO_KEEP))
 
         # convert usual format to per team format 
         per_team_processed = self.batch(seasons_processed, self.build_per_team)
 
         # add rolling features and include previous standings dat
+
         per_team_processed = self.batch(per_team_processed, lambda s: self.add_form(s, 5))
+
+        # we are calling add features, should dispatch the add form from there?
         per_team_processed = self.batch_add_features(per_team_processed, standings)
         per_team_processed = self.batch_add_WDL(per_team_processed)
 
         return seasons_processed, per_team_processed
+    
+    def _add_shots_on_target(self, matches: pd.DataFrame):
+        # need to add a column for shots on target?
+        # should this be for all the previous games?
+        # how should this work?
+        # Should we do average shots
 
-
+        # need to calculate shots on target???
+        # is this stored int he notes? 
+        pass

@@ -20,7 +20,7 @@ def main():
 
     # criterion = JointPoissonLoss()
     criterion = torch.nn.PoissonNLLLoss(log_input=False, full=False, reduction='mean')
-    learning_rate = 0.005
+    learning_rate = 0.01
 
 
     # need in dims, inter dims and out dims
