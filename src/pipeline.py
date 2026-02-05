@@ -6,6 +6,7 @@ from processing.loader import Loader
 from processing.writer import Writer
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
+from utils import PREV_SEASON_COLS, BASELINE_POS, RENAME_DICT, WINDOW_SIZE
 import pandas as pd
 
 COLS_TO_KEEP = [
@@ -53,10 +54,8 @@ class DataPipeline:
         """
         Takes raw season data and returns processed match data and standings
         """
-
         standings = self.transformer.batch(raw_seasons, self.transformer.get_standings)
         
-
         cleaned_seasons = self.transformer.batch(raw_seasons, lambda s: self.transformer.clean(s, COLS_TO_KEEP))
 
         processed_seasons, per_team_matches = self.transformer.transform(
@@ -79,10 +78,10 @@ class DataPipeline:
         self.writer.batch_save_to_dir(per_team_matches, PER_MATCH_PATH, STARTING_YEAR, 'per-team')
         self.writer.batch_save_to_dir(processed_seasons, PROCESSED_DATA_DIR, STARTING_YEAR, PROCESSED_PREFIX)
 
-        inputs = self.transformer.concat_dfs(per_team_matches)
+        inputs = self.transformer.concat_dfs(processed_seasons)
         self.writer.save_to_dir(inputs, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
 
-        train_df, val_df, test_df = self.transformer.get_splits(per_team_matches, 11, 2, 3)
+        train_df, val_df, test_df = self.transformer.get_splits(processed_seasons, 11, 2, 3)
         self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
         self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
         self.writer.save_to_dir(test_df, TEST_DATA_PATH, TEST_DATA_FILENAME)
@@ -102,9 +101,13 @@ class DataPipeline:
 
 if __name__ == "__main__":
     feature_types = [
-        RollingWindowFeatures(window_size=5),
+        RollingWindowFeatures(window_size=WINDOW_SIZE),
         HeadToHeadFeatures(),
-        PrevSeasonFeatures()
+        PrevSeasonFeatures(
+            cols_to_merge=PREV_SEASON_COLS, 
+            baseline_pos=BASELINE_POS, 
+            rename=RENAME_DICT
+            )
     ]
 
     transformer = DataTransformer(feature_types)

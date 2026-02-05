@@ -10,3 +10,15 @@ TRAIN_DATA_PATH = "./data/processed/training/train_set.csv"
 VAL_DATA_PATH = "./data/processed/validation/val_set.csv"
 TEST_DATA_PATH = "./data/processed/test/test_set.csv"
 MODEL_PATH = "./trained_model/NN_trained.pth"
+
+# constants for PrevSeasonFeatures
+PREV_SEASON_COLS = ["PTS", "W", "D", "L", "GF", "GA", "YC", "RC", "AVG_SOT"]
+BASELINE_POS = 17 # position of team from previous season to use for promoted teams
+RENAME_DICT = {"PTS": "prevPTS"}
+
+# constants for RollingWindowFeatures
+WINDOW_SIZE = 5
+
+# constants for HeadToHeadFeatures
+BASELINE_PTS = 1.5 # pts assigned when match data is insufficient
+MATCHES_THRESHOLD = 1

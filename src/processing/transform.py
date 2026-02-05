@@ -1,6 +1,7 @@
 """ Class for cleaning dataset (creates season table and removes unwanted cols from data) """
 import pandas as pd
 from _collections_abc import Callable
+from features import BaseFeatures
 COLS_TO_KEEP = [
                 "Date", "HomeTeam", "AwayTeam", 
                 "FTHG", "FTAG", "HS", "AS",
@@ -10,7 +11,7 @@ COLS_TO_KEEP = [
 
 
 class DataTransformer:
-    def __init__(self, feature_steps=[]):
+    def __init__(self, feature_steps: list[BaseFeatures]=[]):
         self.feature_steps = feature_steps
 
     def _convert_to_datetime(self, match_data: pd.DataFrame) -> pd.DataFrame:
@@ -99,7 +100,7 @@ class DataTransformer:
         season_matches["Form"] = per_team.rolling(num_matches).sum()
         return season_matches
        
-    def build_per_team(self, matches:pd.DataFrame) -> pd.DataFrame:
+    def _match_team_format(self, matches:pd.DataFrame) -> pd.DataFrame:
         """ Takes match data and produces dataframe to allow for easier aggregation of features """
         home = pd.DataFrame({
             "Date": matches["Date"],
@@ -332,23 +333,37 @@ class DataTransformer:
         matches["D"] = (matches["FTHG"] == matches["FTAG"]).astype(int)
         matches["L"] = (matches["FTHG"] < matches["FTAG"]).astype(int)
         return matches
+
+######################
+######################
+######################
     
-    def transform(self, seasons, standings):
+    def transform(self, seasons: list[pd.DataFrame], standings: list[pd.DataFrame]) -> pd.DataFrame:
         """
         Main entrypoint for processing, performs all necessary processing and adds features to data
         """
         # new logic for strategy pattern
         processed_seasons = []
+        team_match_seasons = []
 
         for i, season_df in enumerate(seasons):
             curr_df = season_df.copy()
 
+            # convert to match_team_format for generation
+            curr_df = self._match_team_format(curr_df)
+
             prev_standings = standings[i-1] if i > 0 else None
 
             for step in self.feature_steps:
-                 pass
+                 step.prepare(prev_season=prev_standings)
+                 curr_df = step.generate(curr_df)
 
+            team_match_seasons.append(curr_df)
 
+            final_df = self.reformat_matches(curr_df) # convert from match-team to match
+            processed_seasons.append(final_df)
+
+        return processed_seasons, team_match_seasons
 
         ####################
         seasons_processed = self.batch(seasons, lambda s: self.clean(s, COLS_TO_KEEP))
@@ -365,13 +380,4 @@ class DataTransformer:
         per_team_processed = self.batch_add_WDL(per_team_processed)
 
         return seasons_processed, per_team_processed
-    
-    def _add_shots_on_target(self, matches: pd.DataFrame):
-        # need to add a column for shots on target?
-        # should this be for all the previous games?
-        # how should this work?
-        # Should we do average shots
-
-        # need to calculate shots on target???
-        # is this stored int he notes? 
-        pass
+   

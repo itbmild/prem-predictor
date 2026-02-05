@@ -26,7 +26,7 @@ From Last Season:
     X Yellow Cards
     Average Big Chances
     Average Shots Leading to Goals
-    Average Shots on target
+    X Average Shots on target
     Average Shots
 
 Last X Games:
