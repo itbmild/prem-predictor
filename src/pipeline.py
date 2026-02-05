@@ -6,14 +6,10 @@ from processing.loader import Loader
 from processing.writer import Writer
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
-from utils import PREV_SEASON_COLS, BASELINE_POS, RENAME_DICT, WINDOW_SIZE
+from utils import PREV_SEASON_COLS, BASELINE_POS, RENAME_DICT, WINDOW_SIZE, TARGET_NAME_PAIRS, COLS_TO_KEEP
 import pandas as pd
 
-COLS_TO_KEEP = [
-                        "Date", "HomeTeam", "AwayTeam", 
-                        "FTHG", "FTAG", "HS", "AS",
-                        "HST", "AST", "FTR"
-        ]
+
 STANDINGS_DIR = './data/processed/standings_yearly'
 PROCESSED_PREFIX = 'prem-data'
 STANDINGS_PREFIX = 'standings'
@@ -101,13 +97,16 @@ class DataPipeline:
 
 if __name__ == "__main__":
     feature_types = [
-        RollingWindowFeatures(window_size=WINDOW_SIZE),
-        HeadToHeadFeatures(),
-        PrevSeasonFeatures(
-            cols_to_merge=PREV_SEASON_COLS, 
-            baseline_pos=BASELINE_POS, 
-            rename=RENAME_DICT
-            )
+        RollingWindowFeatures(
+            window_size=WINDOW_SIZE,
+            target_name_pairs=TARGET_NAME_PAIRS
+        ),
+        # HeadToHeadFeatures(),
+        # PrevSeasonFeatures(
+        #     cols_to_merge=PREV_SEASON_COLS, 
+        #     baseline_pos=BASELINE_POS, 
+        #     rename=RENAME_DICT
+        #     )
     ]
 
     transformer = DataTransformer(feature_types)

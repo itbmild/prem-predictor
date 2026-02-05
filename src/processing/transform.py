@@ -1,13 +1,12 @@
 """ Class for cleaning dataset (creates season table and removes unwanted cols from data) """
 import pandas as pd
 from _collections_abc import Callable
-from features import BaseFeatures
+from .features import BaseFeatures
 COLS_TO_KEEP = [
                 "Date", "HomeTeam", "AwayTeam", 
                 "FTHG", "FTAG", "HS", "AS",
                 "HST", "AST", "FTR"
         ]
-
 
 
 class DataTransformer:
@@ -71,8 +70,8 @@ class DataTransformer:
             GA = ("FTAG", "sum"),
             YC = ("HY", "sum"),
             RC = ("HR", "sum"),
-            SOT = ("HST", "sum")
-
+            SOT = ("HST", "sum"),
+            SH = ("HS", "sum")
         )
         away_stats = season.groupby("AwayTeam").agg(
             MP = ("FTAG", "count"),
@@ -83,16 +82,24 @@ class DataTransformer:
             GA = ("FTHG", "sum"),
             YC = ("AY", "sum"),
             RC = ("AR", "sum"),
-            SOT = ("AST", "sum")
+            SOT = ("AST", "sum"),
+            SH = ("AS", "sum")
         )
 
         standings = home_stats + away_stats
         standings = standings.reset_index().rename(columns={"HomeTeam" : "Team"})
+        standings = self._standings_calc(standings)
+        return standings
+
+    def _standings_calc(self, standings: pd.DataFrame) -> pd.DataFrame:
+         # calculations
         standings["GD"] = standings["GF"] - standings["GA"]
         standings["PTS"] = standings["W"] * 3 + standings["D"] * 1
         standings = standings.sort_values("PTS", ascending=False).reset_index(drop=True)
         standings["Position"] = standings.index + 1
-        standings["AVG_SOT"] = (standings["SOT"] / standings["MP"]) * 0.7
+        standings["AVG_SOT"] = (standings["SOT"] / standings["MP"])
+        # need to add one for shots total
+        standings["AVG_SH"] = (standings["SH"] / standings["MP"])
         return standings
 
     def rolling_form(self, season_matches: pd.DataFrame, per_team: pd.DataFrame, num_matches: int) -> pd.DataFrame:
@@ -109,7 +116,8 @@ class DataTransformer:
             "formPTS": matches["FTR"].map({"H": 3, "D": 1, "A": 0}),
             "isHome": 1,
             "FTHG": matches["FTHG"],
-            "FTAG": matches["FTAG"]
+            "FTAG": matches["FTAG"],
+            "YC": matches["HY"]
         })
         away = pd.DataFrame({
             "Date": matches["Date"],
@@ -118,7 +126,8 @@ class DataTransformer:
             "formPTS": matches["FTR"].map({"H": 0, "D": 1, "A": 3}),
             "isHome": 0,
             "FTHG": matches["FTHG"],
-            "FTAG": matches["FTAG"]
+            "FTAG": matches["FTAG"],
+            "YC": matches["AY"]
         })
         return pd.concat([home,away], ignore_index=True)
     

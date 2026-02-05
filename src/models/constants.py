@@ -24,19 +24,19 @@ From Last Season:
     X Goals Against
     X Red Cards
     X Yellow Cards
-    Average Big Chances
-    Average Shots Leading to Goals
     X Average Shots on target
-    Average Shots
+    X Average Shots
 
 Last X Games:
-    Average Shots leading to Goals
+    Average Goals
+    Average Goals against
     Average Shots on target
+
+    
     # Average Points
     Average Ycards
     Average RCards
-    Average Goals
-    Average Goals against
+    
     Wins
     Losses
     Draws

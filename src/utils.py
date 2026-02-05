@@ -18,7 +18,15 @@ RENAME_DICT = {"PTS": "prevPTS"}
 
 # constants for RollingWindowFeatures
 WINDOW_SIZE = 5
+TARGET_NAME_PAIRS = [("formPTS", "Form"), ("YC", "AVG_YC")]
 
 # constants for HeadToHeadFeatures
 BASELINE_PTS = 1.5 # pts assigned when match data is insufficient
 MATCHES_THRESHOLD = 1
+
+# need a constant for things to directly pull from the raw data, i.e. the col names
+COLS_TO_KEEP = [
+    "Date", "HomeTeam", "FTHG", "HS", "HST", "HY", "HR", "HF",
+    "AwayTeam", "FTAG", "AS", "AST", "AY", "AR", "AF",
+    "FTR"
+]
