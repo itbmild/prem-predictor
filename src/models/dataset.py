@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
-from .constants import PREM_FEATURES, PREM_LABELS, PREM_EVAL_LABELS
+from .constants import PREM_FEATURES, PREM_LABELS, PREM_EVAL_LABELS, PREM_COLS_TO_DROP
 from processing.loader import Loader
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
@@ -9,19 +9,22 @@ class PremierLeagueDataset(Dataset):
     """
     Stores match data for each premier league season
     """
-    def __init__(self, match_path, eval=False):
+    def __init__(self, match_path, scaler=None, eval=False):
         self.loader = Loader()
         self.match_path = match_path
         self.matches = self.loader.load(match_path)
-        self.features = self.matches[PREM_FEATURES]
+        
+        self.features = self.matches.drop(columns=PREM_COLS_TO_DROP)
+        self.scaler = scaler
+
+        if scaler is not None:
+            print("scale reached")
+            self.features = scaler.transform(self.features)
+
         if eval:
             self.labels = self.matches[PREM_EVAL_LABELS]
         else:
             self.labels = self.matches[PREM_LABELS]
-
-      
-        # nan_cols = self.features.columns[self.features.isna().any()]
-        # print("Columns with NaNs:", nan_cols.tolist())
 
     def __len__(self):
         return len(self.matches)
@@ -37,21 +40,32 @@ class PremierLeagueDataset(Dataset):
     
 class PLDataModule:
     """ Class for managing dataloaders to NN model """
-    def __init__(self, train_path="", val_path="", test_path="", batch_size=64):
+    def __init__(self, train_path="", val_path="", test_path="", batch_size=64, scale=True):
         self.train_path = train_path
         self.val_path = val_path
         self.test_path = test_path
         self.batch_size = batch_size
-        self.scaler = StandardScaler()
+        self.scaler = StandardScaler().set_output(transform="pandas")
+        if scale:
+            self.fit_scaler()
+
+    def fit_scaler(self):
+        loader = Loader()
+        train_df = loader.load(self.train_path)
+        train_features = train_df.drop(columns=PREM_COLS_TO_DROP)
+        self.scaler.fit(train_features)
 
     def get_train_loader(self):
-        dataset = PremierLeagueDataset(self.train_path)
+        dataset = PremierLeagueDataset(self.train_path, scaler=self.scaler)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
     def get_val_loader(self):
-        dataset = PremierLeagueDataset(self.val_path)
+        dataset = PremierLeagueDataset(self.val_path, scaler=self.scaler)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
     def get_test_loader(self):
-        dataset = PremierLeagueDataset(self.test_path, eval=True)
+        dataset = PremierLeagueDataset(self.test_path, scaler=self.scaler, eval=True)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False) 
+    
+    def get_scaler(self):
+        return self.scaler

@@ -10,8 +10,9 @@ COLS_TO_KEEP = [
 
 
 class DataTransformer:
-    def __init__(self, feature_steps: list[BaseFeatures]=[]):
-        self.feature_steps = feature_steps
+    def __init__(self, per_season_steps: list[BaseFeatures]=[], combined_steps: list[BaseFeatures]=[]):
+        self.per_season_steps = per_season_steps
+        self.combined_steps = combined_steps
 
     def _convert_to_datetime(self, match_data: pd.DataFrame) -> pd.DataFrame:
         match_data["Date"] = pd.to_datetime(match_data["Date"], format="mixed", dayfirst=True)
@@ -68,8 +69,8 @@ class DataTransformer:
             L = ("FTR", lambda x: (x == 'A').sum()),
             GF = ("FTHG", "sum"),
             GA = ("FTAG", "sum"),
-            YC = ("HY", "sum"),
-            RC = ("HR", "sum"),
+            SSN_YC = ("HY", "sum"),
+            SSN_RC = ("HR", "sum"),
             SOT = ("HST", "sum"),
             SH = ("HS", "sum")
         )
@@ -80,8 +81,8 @@ class DataTransformer:
             L = ("FTR", lambda x: (x == 'H').sum()),
             GF = ("FTAG", "sum"),
             GA = ("FTHG", "sum"),
-            YC = ("AY", "sum"),
-            RC = ("AR", "sum"),
+            SSN_YC = ("AY", "sum"),
+            SSN_RC = ("AR", "sum"),
             SOT = ("AST", "sum"),
             SH = ("AS", "sum")
         )
@@ -117,7 +118,9 @@ class DataTransformer:
             "isHome": 1,
             "FTHG": matches["FTHG"],
             "FTAG": matches["FTAG"],
-            "YC": matches["HY"]
+            "YC": matches["HY"],
+            "RC": matches["HR"],
+            "Goals": matches["FTHG"]
         })
         away = pd.DataFrame({
             "Date": matches["Date"],
@@ -127,7 +130,9 @@ class DataTransformer:
             "isHome": 0,
             "FTHG": matches["FTHG"],
             "FTAG": matches["FTAG"],
-            "YC": matches["AY"]
+            "YC": matches["AY"],
+            "RC": matches["AR"],
+            "Goals": matches["FTAG"]
         })
         return pd.concat([home,away], ignore_index=True)
     
@@ -338,9 +343,9 @@ class DataTransformer:
     def add_WDL(self, matches: pd.DataFrame):
         # need to add W, D and L columns.
 
-        matches["W"] = (matches["FTHG"] > matches["FTAG"]).astype(int)
-        matches["D"] = (matches["FTHG"] == matches["FTAG"]).astype(int)
-        matches["L"] = (matches["FTHG"] < matches["FTAG"]).astype(int)
+        matches["W_home"] = (matches["FTHG"] > matches["FTAG"]).astype(int)
+        matches["D_home"] = (matches["FTHG"] == matches["FTAG"]).astype(int)
+        matches["L_home"] = (matches["FTHG"] < matches["FTAG"]).astype(int)
         return matches
 
 ######################
@@ -352,7 +357,6 @@ class DataTransformer:
         Main entrypoint for processing, performs all necessary processing and adds features to data
         """
         # new logic for strategy pattern
-        processed_seasons = []
         team_match_seasons = []
 
         for i, season_df in enumerate(seasons):
@@ -360,19 +364,37 @@ class DataTransformer:
 
             # convert to match_team_format for generation
             curr_df = self._match_team_format(curr_df)
-
             prev_standings = standings[i-1] if i > 0 else None
 
-            for step in self.feature_steps:
+            # for features constrained to one season
+            for step in self.per_season_steps:
                  step.prepare(prev_season=prev_standings)
                  curr_df = step.generate(curr_df)
 
             team_match_seasons.append(curr_df)
 
-            final_df = self.reformat_matches(curr_df) # convert from match-team to match
+        # for features requiring all seasons combined as one df
+        print(team_match_seasons[1].columns.tolist())
+
+        combined = self._combine(team_match_seasons)
+        print(combined.columns.tolist())
+        for step in self.combined_steps:
+            # results in a combined df where we wanna re-perform the splitting?
+            combined = step.generate(combined) 
+
+        # resplit into per-season
+        processed_seasons = []
+        final_team_match = []
+        for i, group in combined.groupby('season', sort=True):
+            clean = group.drop(columns=['season'])
+            final_team_match.append(clean)
+
+            final_df = self.reformat_matches(clean)
+            final_df = self.add_WDL(final_df)
             processed_seasons.append(final_df)
 
-        return processed_seasons, team_match_seasons
+
+        return processed_seasons, final_team_match
 
         ####################
         seasons_processed = self.batch(seasons, lambda s: self.clean(s, COLS_TO_KEEP))
@@ -389,4 +411,20 @@ class DataTransformer:
         per_team_processed = self.batch_add_WDL(per_team_processed)
 
         return seasons_processed, per_team_processed
-   
+
+    def _combine(self, dfs: list[pd.DataFrame]) -> pd.DataFrame:
+        """Takes list of seasons as DataFrames and combines them into one dataFrame
+
+        Args:
+            dfs (list[DataFrame]): list of processed season data in team-match format
+
+        Returns:
+            Combined list of season data with season as index 
+        """
+        for i, df in enumerate(dfs):
+            df['season'] = i
+
+        df = pd.concat(dfs, ignore_index=True)
+
+        df = df.sort_values('Date')
+        return df

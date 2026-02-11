@@ -7,7 +7,7 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         self.block = nn.Sequential(
             nn.Linear(in_features, out_features),
-            nn.LeakyReLU(),
+            nn.ReLU(),
         )
     
     def forward(self, x):
@@ -20,14 +20,27 @@ class NeuralNet(nn.Module):
         
         self.block1 = BasicBlock(input_dims, inter_dims)
         self.block2 = BasicBlock(inter_dims, inter_dims)
-        self.block3 = BasicBlock(inter_dims, inter_dims)
+
+        self.fc1 = nn.Linear(input_dims, inter_dims)
+        self.fc2 = nn.Linear(inter_dims, inter_dims)
+
+
+        # self.block3 = BasicBlock(inter_dims, inter_dims)
         self.regression = nn.Linear(inter_dims , output_dims)
 
     def forward(self, x):
         x = self.block1(x)
         x = self.block2(x)
-        x = self.block3(x)
+        # x = self.block3(x)
+        # x = torch.relu(self.fc1(x))
+        # x = torch.relu(self.fc2(x))
+        
+
         x = self.regression(x)
-        x = torch.nn.functional.softplus(x)
+
+        # print(x[:2].detach().cpu().numpy())
+        # x = torch.nn.functional.softplus(x)
+        # x = torch.relu(x)
+
         return x
     

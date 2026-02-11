@@ -6,7 +6,7 @@ from processing.loader import Loader
 from processing.writer import Writer
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
-from utils import PREV_SEASON_COLS, BASELINE_POS, RENAME_DICT, WINDOW_SIZE, TARGET_NAME_PAIRS, COLS_TO_KEEP
+from utils import PREV_SEASON_COLS, BASELINE_POS, RENAME_DICT, WINDOW_SIZE, TARGET_NAME_PAIRS, COLS_TO_KEEP, H2H_PAIRS
 import pandas as pd
 
 
@@ -39,9 +39,9 @@ class DataPipeline:
 
         files = self.loader.get_files(RAW_DATA_DIR)
 
-        print("\n--- [DEBUG] OS File Loading Order ---")
-        for i, f in enumerate(files):
-            print(f"Index {i}: {f}")
+        # print("\n--- [DEBUG] OS File Loading Order ---")
+        # for i, f in enumerate(files):
+        #     print(f"Index {i}: {f}")
 
         seasons = self.loader.load_batch(files)
         return seasons
@@ -65,10 +65,6 @@ class DataPipeline:
         """
         Takes processed data and saves standings, processed match data (per team and input format) to specified directories
         """
-        print(f"DEBUG: Saving {len(standings)} seasons starting from {STARTING_YEAR}")
-        print(f"DEBUG: First team in standing: {standings[0]['Team'].iloc[0]}")
-        print(f"DEBUG: length of standings {len(standings)}")
-
         self.writer.batch_save_to_dir(standings, STANDINGS_DIR, STARTING_YEAR, STANDINGS_PREFIX)
 
         self.writer.batch_save_to_dir(per_team_matches, PER_MATCH_PATH, STARTING_YEAR, 'per-team')
@@ -77,7 +73,7 @@ class DataPipeline:
         inputs = self.transformer.concat_dfs(processed_seasons)
         self.writer.save_to_dir(inputs, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
 
-        train_df, val_df, test_df = self.transformer.get_splits(processed_seasons, 11, 2, 3)
+        train_df, val_df, test_df = self.transformer.get_splits(processed_seasons, 11, 3, 3)
         self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
         self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
         self.writer.save_to_dir(test_df, TEST_DATA_PATH, TEST_DATA_FILENAME)
@@ -101,15 +97,21 @@ if __name__ == "__main__":
             window_size=WINDOW_SIZE,
             target_name_pairs=TARGET_NAME_PAIRS
         ),
-        # HeadToHeadFeatures(),
-        # PrevSeasonFeatures(
-        #     cols_to_merge=PREV_SEASON_COLS, 
-        #     baseline_pos=BASELINE_POS, 
-        #     rename=RENAME_DICT
-        #     )
+        PrevSeasonFeatures(
+            cols_to_merge=PREV_SEASON_COLS, 
+            baseline_pos=BASELINE_POS, 
+            rename=RENAME_DICT
+            )
     ]
 
-    transformer = DataTransformer(feature_types)
+    combined_features = [
+        HeadToHeadFeatures(
+            window_size=WINDOW_SIZE,
+            target_name_pairs=H2H_PAIRS
+            )
+    ]
+
+    transformer = DataTransformer(feature_types, combined_features)
     loader = Loader()
     writer = Writer()
 
