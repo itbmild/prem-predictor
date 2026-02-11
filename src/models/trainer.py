@@ -23,7 +23,7 @@ class Trainer:
         loss_acc = 0.0
         for features, labels in loader:
             features, labels = features.to(self.device), labels.to(self.device)
-
+            
             # forward pass
             outputs = self.model(features)
             loss = self.criterion(outputs, labels)

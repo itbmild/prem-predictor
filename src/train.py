@@ -223,8 +223,8 @@ if __name__ == "__main__":
     # test_other(X_train, y_train)
     # test_poisson(X_train, y_train)
 
-    preds, labels = test_custom(X_train, y_train, X_test, y_test)
+    # preds, labels = test_custom(X_train, y_train, X_test, y_test)
 
     # print(preds[0:20])
 
-    # main()
+    main()

@@ -71,38 +71,6 @@ class WDLClassificationMetric(nn.Module):
         cm = self.matrix.cpu().numpy()
         names = ["Home Win", "Draw", "Away Win"]
 
-class BrierScore(nn.Module):
-    """Performance metric for results of Monte-Carlo simulation
-
-    Measures mean squared difference between predicted probability assigned to possible
-    outcomes for a given "row" or match, and the actual outcome of that match     
-    
-    BS = 1/N sum 1->N (ft - ot)^2
-
-    Where ft is forecasted probability and ot is outcome of event at instance t (0 if it doesnt happen, one if it does)
-    N is number of rows
-
-    ^ above is only for single category
-
-    Multi category Brier Score is given by:
-
-    BS = 1/N sum 1->N sum 1->R (fti - oti)^2
-
-    R is the number of possible classes in which the event can fall, and N is the overall number of instances of all classes.
-    fti is predicted probability of class i
-    oti is 1 if it is the ith class instance t; 0 otherwise. 
-
-    in our case, R = 3
-
-    We have all of our predictions already as a dataframe, do we need a separate class for the brier? probably not
-
-
-    ""
-
-
-    pass
-
-
 
 if __name__ == "__main__":
     metric = WDLClassificationMetric(threshold=0.1)

@@ -8,7 +8,7 @@ import pandas as pd
 from processing.loader import Loader
 from processing.writer import Writer
 
-from utils import PREDICTIONS_PATH, PROB_COLS, TEST_DATA_PATH
+from utils import PREDICTIONS_PATH, PROB_COLS, TEST_DATA_PATH, DATA_23, DATA_24, BET365, BET_365_C
 
 
 class MatchSimulator:
@@ -167,13 +167,41 @@ if __name__ == "__main__":
 
     print(f"Brier Score for predictions from 2023-2025: {score:.4f}")
 
+
+    # would like to compare how my predictions shape up compared to the betting agencies
+    # this gives a rough idea of how good the predictions actually are
+
+
+    
+
     # writer.save_to_dir(df, "./probabilites", "MC.csv")
 
 
 
     # now that we have the probability distributions, we want to somehow "score"
     # the performance of the model
+    
+    bookies_probs_23 = loader.load(DATA_23)
+    bookies_probs_24 = loader.load(DATA_24)
 
+
+
+    bookies_probs = pd.concat([bookies_probs_23, bookies_probs_24], axis=0)
+    bookies_probs = bookies_probs[BET_365_C]
+    bookies_probs.columns = PROB_COLS
+
+    bookies_probs[PROB_COLS] = 1 / bookies_probs[PROB_COLS]
+
+    bookies_probs[PROB_COLS] = bookies_probs[PROB_COLS].div(bookies_probs[PROB_COLS].sum(axis=1), axis=0)
+    print(bookies_probs.iloc[0:10])
+
+    new_joined = simulator.join_predictions(bookies_probs, matches)
+
+    new_score, other_df = simulator.brier_score(new_joined)
+
+    print(f"BET365 Brier Score: {new_score:.4f}")
+
+    
     # can use the Brier score
 
 

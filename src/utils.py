@@ -38,6 +38,9 @@ COLS_TO_KEEP = [
 ]
 
 # bookies
+DATA_23 = "./data/raw/prem-data-23.csv"
+DATA_24 = "./data/raw/prem-data-24.csv"
 
 XBET = ["1XBH", "1XBD", "1XBA"]
-BET365 = [""]
+BET365 = ["B365H", "B365D", "B365A"]
+BET_365_C = ["B365CH", "B365CD", "B365CA"]

@@ -4,7 +4,7 @@ from .constants import PREM_FEATURES, PREM_LABELS, PREM_EVAL_LABELS, PREM_COLS_T
 from processing.loader import Loader
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
-
+ 
 class PremierLeagueDataset(Dataset):
     """
     Stores match data for each premier league season
@@ -15,6 +15,7 @@ class PremierLeagueDataset(Dataset):
         self.matches = self.loader.load(match_path)
         
         self.features = self.matches.drop(columns=PREM_COLS_TO_DROP)
+        print(self.features.columns)
         self.scaler = scaler
 
         if scaler is not None:
