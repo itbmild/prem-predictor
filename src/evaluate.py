@@ -13,7 +13,6 @@ from utils import TRAIN_DATA_PATH, TEST_DATA_PATH, MODEL_PATH, PREDICTIONS_PATH,
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     loader_manager = PLDataModule(train_path=TRAIN_DATA_PATH, test_path=TEST_DATA_PATH)
     test_loader = loader_manager.get_test_loader()
 

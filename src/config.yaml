@@ -1,0 +1,38 @@
+features:
+  window_size: 5
+  target_name_pairs:
+    - ["formPTS", "Form"]
+    - ["YC", "AVG_YC"]
+    - ["RC", "AVG_RC"]
+  h2h_pairs:
+    - ["formPTS", "formH2H"]
+    - ["Goals", "avg_H2H_goals"]
+  previous_cols:
+    ["PTS", "W", "D", "L", "GF", "GA", "SSN_YC", "SSN_RC", "AVG_SOT"]
+  baseline:
+    18
+  rename:
+    "PTS": "prevPTS"
+
+# constants needed for the pipeline
+
+pipeline:
+  raw_data_dir: "./data/raw"
+  cols: 
+    [
+      "Date", "HomeTeam", "FTHG", "HS", "HST", "HY", "HR", "HF",
+      "AwayTeam", "FTAG", "AS", "AST", "AY", "AR", "AF", "FTR"
+    ]
+  # constants for writing / saving
+  standings_dir: "./data/processed/standings_yearly"
+  starting_year: 2008
+  standings_prefix: "standings"
+
+  team_match_dir: "./data/processed/team_match"
+  team_match_prefix: "team-match"
+
+
+
+
+
+

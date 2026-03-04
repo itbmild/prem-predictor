@@ -27,22 +27,19 @@ TEST_DATA_FILENAME = "test_set.csv"
 PER_MATCH_PATH = "./data/processed/per_team"
 
 class DataPipeline:
-    def __init__(self, loader: Loader, transformer: DataTransformer, writer: Writer):
+    def __init__(self, loader: Loader, transformer: DataTransformer, writer: Writer, config: dict=None):
         self.loader = loader
         self.transformer = transformer
         self.writer = writer
+        self.config = config
+        print(self.config)
+
 
     def _get_raw_data(self) -> pd.DataFrame:
         """
         Loads raw match data from file and returns pandas dataframe containing the data
         """
-
         files = self.loader.get_files(RAW_DATA_DIR)
-
-        # print("\n--- [DEBUG] OS File Loading Order ---")
-        # for i, f in enumerate(files):
-        #     print(f"Index {i}: {f}")
-
         seasons = self.loader.load_batch(files)
         return seasons
 
@@ -66,13 +63,10 @@ class DataPipeline:
         Takes processed data and saves standings, processed match data (per team and input format) to specified directories
         """
         self.writer.batch_save_to_dir(standings, STANDINGS_DIR, STARTING_YEAR, STANDINGS_PREFIX)
-
         self.writer.batch_save_to_dir(per_team_matches, PER_MATCH_PATH, STARTING_YEAR, 'per-team')
         self.writer.batch_save_to_dir(processed_seasons, PROCESSED_DATA_DIR, STARTING_YEAR, PROCESSED_PREFIX)
-
         inputs = self.transformer.concat_dfs(processed_seasons)
         self.writer.save_to_dir(inputs, PROCESSED_FULL_DATA_PATH, FULL_MATCH_DATA_NAME)
-
         train_df, val_df, test_df = self.transformer.get_splits(processed_seasons, 11, 3, 3)
         self.writer.save_to_dir(train_df, TRAIN_DATA_PATH, TRAIN_DATA_FILENAME)
         self.writer.save_to_dir(val_df, VAL_DATA_PATH, VAL_DATA_FILENAME)
@@ -81,15 +75,10 @@ class DataPipeline:
     def run(self):
         # Get raw data with loader
         raw_seasons = self._get_raw_data()
-        
         # Transform Data
         processed_seasons, per_team_matches, standings = self._transform_data(raw_seasons)
-
         # Save Processed Data
         self._save_data(processed_seasons, per_team_matches, standings)
-
-        
-
 
 if __name__ == "__main__":
     feature_types = [
@@ -114,6 +103,5 @@ if __name__ == "__main__":
     transformer = DataTransformer(feature_types, combined_features)
     loader = Loader()
     writer = Writer()
-
     dp = DataPipeline(loader, transformer, writer)
     dp.run()

@@ -13,13 +13,11 @@ class PremierLeagueDataset(Dataset):
         self.loader = Loader()
         self.match_path = match_path
         self.matches = self.loader.load(match_path)
-        
         self.features = self.matches.drop(columns=PREM_COLS_TO_DROP)
         print(self.features.columns)
         self.scaler = scaler
 
         if scaler is not None:
-            print("scale reached")
             self.features = scaler.transform(self.features)
 
         if eval:
@@ -51,20 +49,24 @@ class PLDataModule:
             self.fit_scaler()
 
     def fit_scaler(self):
+        """ Fit scaler to the training data """
         loader = Loader()
         train_df = loader.load(self.train_path)
         train_features = train_df.drop(columns=PREM_COLS_TO_DROP)
         self.scaler.fit(train_features)
 
     def get_train_loader(self):
+        """ Returns DataLoader object for training data """
         dataset = PremierLeagueDataset(self.train_path, scaler=self.scaler)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
     def get_val_loader(self):
+        """ Returns DataLoader object for validation data """
         dataset = PremierLeagueDataset(self.val_path, scaler=self.scaler)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
     def get_test_loader(self):
+        """ Returns DataLoader object for test data """
         dataset = PremierLeagueDataset(self.test_path, scaler=self.scaler, eval=True)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False) 
     

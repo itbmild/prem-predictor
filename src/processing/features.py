@@ -35,12 +35,13 @@ class RollingWindowFeatures(BaseFeatures):
 
     Calculations involve rolling averages or sums over specified number of previous matches
     """
-    def __init__(self, window_size: int, target_name_pairs: list[tuple]):
+    def __init__(self, window_size: int, target_name_pairs: list):
         """ Initialises feature generator
 
         Args:
             window_size (int): Size of rolling window 
         """
+        # super().__init__(window_size, target_name_pairs)
         self.window_size = window_size
         self.pairs = target_name_pairs
 
@@ -53,26 +54,9 @@ class RollingWindowFeatures(BaseFeatures):
         
         Returns:
             pd.DataFrame: The original DataFrame object with newly added rolling window features
-
-            Average Goals
-            Average Goals against
-            Average Shots on target
-
-            X Average Points
-            X Average Ycards
-            X Average RCards
-            
-            Wins
-            Losses
-            Draws
-
-            need a way to calculate each of these over the last X amount of games given team-match format
-            we have:
-            Date, Team, Opponent, ... 
-            # need to roll over previous x games from that same team
         """
 
-        for (target, name) in self.pairs:
+        for target, name in self.pairs:
             # need to compute the averages for all these pairs
             df = self._rolling_avg(df, target, name)
         return df
@@ -101,11 +85,7 @@ class RollingWindowFeatures(BaseFeatures):
 
         df[name] = df[name].fillna(0)
         df = df.sort_values('Date')
-        
         return df
-
-    def _rolling_sum(self, df: pd.DataFrame) -> pd.DataFrame:
-        pass
 
 def debug_per_team(df, team_name):
     # Filter for the specific team
@@ -130,7 +110,8 @@ class HeadToHeadFeatures(BaseFeatures):
 
     Where data is not available, baseline statistics are assigned instead
     """
-    def __init__(self, window_size: int, target_name_pairs: list[tuple]):
+    def __init__(self, window_size: int, target_name_pairs: list):
+        # super().__init__(window_size, target_name_pairs)
         self.window_size = window_size
         self.pairs = target_name_pairs
 
@@ -145,8 +126,6 @@ class HeadToHeadFeatures(BaseFeatures):
         """
         for target, name in self.pairs:
             df = self._H2H_rolling_avg(df, target, name)
-
-        test_h2h_logic(df)
         return df
 
     
@@ -165,19 +144,6 @@ class HeadToHeadFeatures(BaseFeatures):
         df[name] = df[name].fillna(0)
         df = df.sort_values('Date')
         return df
-    
-def test_h2h_logic(df):
-    # 1. Filter for one specific matchup
-    # We want to see Arsenal's performance specifically against Man City
-    test_case = df[(df['Team'] == 'Arsenal') & (df['Opponent'] == 'Man City')].copy()
-    
-    # 2. Sort by date to see the timeline
-    test_case = test_case.sort_values('Date')
-    
-    # 3. Display the key columns
-    print("Verifying H2H Form: Arsenal vs Man City")
-    cols_to_show = ['Date', 'Team', 'Opponent', 'Goals', 'avg_H2H_goals']
-    print(test_case[cols_to_show])
 
 class PrevSeasonFeatures(BaseFeatures):
     """ Class for adding features based on previous season's league standings """
@@ -187,6 +153,7 @@ class PrevSeasonFeatures(BaseFeatures):
         self.rename = rename
 
     def prepare(self, prev_season: pd.DataFrame):
+        """ Setter for prev_season """
         self.prev_season = prev_season
     
     def generate(self, df: pd.DataFrame):
@@ -195,8 +162,6 @@ class PrevSeasonFeatures(BaseFeatures):
         If previous standings do not exist, return df as is (ignore first season) 
         """
         if self.prev_season is None:
-            # for col in self.cols:
-            #     df[f"prev_{col}"] = 0
             return df
         
         baseline = self.prev_season.loc[self.baseline_pos, self.cols]
@@ -207,8 +172,6 @@ class PrevSeasonFeatures(BaseFeatures):
             right_on=["Team"],
             how="left"
         )
-        
-
 
         df[self.cols] = df[self.cols].fillna(baseline)
         df = df.rename(columns=self.rename)
