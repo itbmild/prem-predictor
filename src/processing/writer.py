@@ -1,7 +1,6 @@
 """ Writer class to handle saving files """
 import pandas as pd
 from pathlib import Path
-from .loader import Loader
 
 class Writer:
     def __init__(self):

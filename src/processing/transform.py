@@ -2,12 +2,6 @@
 import pandas as pd
 from _collections_abc import Callable
 from .features import BaseFeatures
-COLS_TO_KEEP = [
-                "Date", "HomeTeam", "AwayTeam", 
-                "FTHG", "FTAG", "HS", "AS",
-                "HST", "AST", "FTR"
-        ]
-
 
 class DataTransformer:
     def __init__(self, per_season_steps: list[BaseFeatures]=[], combined_steps: list[BaseFeatures]=[]):

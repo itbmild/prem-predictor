@@ -1,6 +1,5 @@
 import pandas as pd
 from abc import ABC, abstractmethod
-from utils import MATCHES_THRESHOLD
 
 class BaseFeatures(ABC):
     """
@@ -72,17 +71,15 @@ class RollingWindowFeatures(BaseFeatures):
             pd.DataFrame: Original DataFrame object with average col added
         """
         df = df.sort_values(['Team', 'Date'])
-
         shift = df.groupby('Team')[target].shift(1)
 
         df[name] = (
             shift
             .groupby(df['Team'])
-            .rolling(window=self.window_size, min_periods=MATCHES_THRESHOLD)
+            .rolling(window=self.window_size, min_periods=1)
             .mean()
             .values
         )
-
         df[name] = df[name].fillna(0)
         df = df.sort_values('Date')
         return df
@@ -136,7 +133,7 @@ class HeadToHeadFeatures(BaseFeatures):
         df[name] = (
             shift
             .groupby([df['Team'], df['Opponent']])
-            .rolling(window=self.window_size, min_periods=MATCHES_THRESHOLD)
+            .rolling(window=self.window_size, min_periods=1)
             .mean()
             .values
         )

@@ -11,16 +11,12 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.linear_model import PoissonRegressor
 from sklearn.preprocessing import StandardScaler
 
-
 from torch.utils.data import TensorDataset, DataLoader
 import torch.nn as nn
-
 
 import pandas as pd
 import numpy as np
 import torch
-
-
 
 from utils import TRAIN_DATA_PATH, VAL_DATA_PATH, TEST_DATA_PATH, MODEL_PATH
 from models.constants import PREM_COLS_TO_DROP, PREM_EVAL_LABELS
@@ -34,7 +30,6 @@ def main():
     train_loader = loader_manager.get_train_loader()
     val_loader = loader_manager.get_val_loader()
 
-
     # criterion = JointPoissonLoss()
     # criterion = torch.nn.PoissonNLLLoss(log_input=False, full=False, reduction='mean')
 
@@ -42,7 +37,6 @@ def main():
     learning_rate = 0.0005
     weight_decay = 0
     
-
     # need in dims, inter dims and out dims
     model = NeuralNet(29,64,2)
     model.to(device)
@@ -51,7 +45,6 @@ def main():
     # optimizer = torch.optim.LBFGS(model.parameters(), lr=learning_rate)
 
     num_epochs=100
-    
     scheduler = CosineAnnealingLR(optimizer, T_max=100, eta_min=1e-6)
     # scheduler= None
 
@@ -71,7 +64,6 @@ def test_other(X_train, y_train):
 
     X_test = X.to_numpy(dtype=np.float32)
     y_test = y.to_numpy(dtype=np.float32)
-
 
     mlp = MLPRegressor(hidden_layer_sizes=(64,64),
                        activation='relu',

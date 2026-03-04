@@ -14,7 +14,6 @@ class DataPipeline:
         self.writer = writer
         self.config = config
 
-
     def _get_raw_data(self) -> pd.DataFrame:
         """
         Loads raw match data from file and returns pandas dataframe containing the data
@@ -77,6 +76,5 @@ class DataPipeline:
         raw_seasons = self._get_raw_data()
         # Transform Data
         processed_seasons, per_team_matches, standings = self._transform_data(raw_seasons)
-        
         # Save Processed Data
         self._save_data(processed_seasons, per_team_matches, standings)
