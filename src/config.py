@@ -1,7 +1,6 @@
 """ Class for handling config dictionary loaded from yaml """
 from pathlib import Path
 
-
 class Config(dict):
     """ 
     Wrapper for config dict, provides methods for getting absolute paths

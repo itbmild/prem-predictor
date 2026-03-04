@@ -15,10 +15,7 @@ class Writer:
             dir (str): directory to save DataFrame to
             filename (str): name given to saved file
         """
-        print(dir)
-        print(filename)
         target = Path(dir) / f"{filename}.csv"
-        print(target)
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             df.to_csv(target, index=False)

@@ -373,11 +373,7 @@ class DataTransformer:
 
             team_match_seasons.append(curr_df)
 
-        # for features requiring all seasons combined as one df
-        print(team_match_seasons[1].columns.tolist())
-
         combined = self._combine(team_match_seasons)
-        print(combined.columns.tolist())
         for step in self.combined_steps:
             # results in a combined df where we wanna re-perform the splitting?
             combined = step.generate(combined) 

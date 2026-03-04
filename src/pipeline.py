@@ -66,8 +66,8 @@ class DataPipeline:
 
         # save stacked dataframe in short format
         self.writer.save_to_dir(stacked_short, 
-                                self.config.path("stacked_dir"),
-                                self.config.stacked_filename
+                                self.config.path("short_stacked_dir"),
+                                self.config.short_stacked_filename
                                 )
     def run(self):
         """

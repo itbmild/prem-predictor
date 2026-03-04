@@ -83,8 +83,6 @@ class PipelineOrchestrator:
         pl = DataPipeline(self.loader, self.transformer, self.writer, self.config.pipeline)
         pl.run()
 
-        # pl.run()
-
     def train_model(self):
         pass
 

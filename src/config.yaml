@@ -29,7 +29,7 @@ pipeline:
   standings_prefix: "standings"
 
   # team-match format
-  team_match_dir: "./data/processed/team_match"
+  team_match_dir: "./data/processed/debug/team_match_yearly"
   team_match_prefix: "team-match"
 
   # yearly short format
@@ -37,8 +37,12 @@ pipeline:
   yearly_prefix: "prem-data"
 
   # stacked (short) format
-  stacked_dir: "./data/processed/short"
-  stacked_filename: "prem-data-stacked"
+  short_stacked_dir: "./data/processed/inputs"
+  short_stacked_filename: "stacked-short"
+
+  # stacked (team-match) format
+  team_match_stacked_dir: "./data/processed/inputs"
+  team_match_stacked_filename: "stacked-team-match"
   
 
 
