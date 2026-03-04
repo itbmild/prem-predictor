@@ -30,24 +30,25 @@ DataPipeline   | train              | eval
 calls run      | reads files        | loads model
 processes      | instantiates model | runs sim
 dumps in files | trains model       | reports results
-
-
-
 """
 import argparse
 import yaml
 import pandas as pd
+from config import Config
 from processing.loader import Loader
 from processing.writer import Writer
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
 from pipeline import DataPipeline
 
+
+
+
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
     def __init__(self, config_path):
         with open(config_path, 'r') as f:
-            self.config = yaml.safe_load(f)
+            self.config = Config(yaml.safe_load(f))
 
         self.loader = Loader()
         self.writer = Writer()
@@ -75,13 +76,12 @@ class PipelineOrchestrator:
                 target_name_pairs=features['target_name_pairs']
             )
         ]
-        return DataTransformer(features, combined_features)
+        return DataTransformer(feature_types, combined_features)
     
     def process_data(self):
         """ Takes raw data and processes it to prepare for model input """
-        # TODO feed config into the datapipeline, what does it need to know?
-        pl = DataPipeline(self.loader, self.transformer, self.writer, self.config["pipeline"])
-
+        pl = DataPipeline(self.loader, self.transformer, self.writer, self.config.pipeline)
+        pl.run()
 
         # pl.run()
 
@@ -117,13 +117,11 @@ def load_data(self) -> pd.DataFrame:
 def test():
     # runs a test example thingamabob
     orc_path = "./config.yaml"
+
+
     pl = PipelineOrchestrator(orc_path)
     pl.process_data()
 
-
-
-    
-    pass
 
 if __name__ == "__main__":
     test()

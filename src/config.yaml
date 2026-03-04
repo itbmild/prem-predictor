@@ -24,12 +24,22 @@ pipeline:
       "AwayTeam", "FTAG", "AS", "AST", "AY", "AR", "AF", "FTR"
     ]
   # constants for writing / saving
-  standings_dir: "./data/processed/standings_yearly"
+  standings_dir: "./data/processed/debug/standings_yearly"
   starting_year: 2008
   standings_prefix: "standings"
 
+  # team-match format
   team_match_dir: "./data/processed/team_match"
   team_match_prefix: "team-match"
+
+  # yearly short format
+  yearly_dir: "./data/processed/debug/processed_yearly"
+  yearly_prefix: "prem-data"
+
+  # stacked (short) format
+  stacked_dir: "./data/processed/short"
+  stacked_filename: "prem-data-stacked"
+  
 
 
 
