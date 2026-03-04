@@ -9,7 +9,7 @@ PREM_FEATURES = [
 PREM_COLS_TO_DROP = [
     "Date", "Team_home", "AwayTeam", "formPTS_home",
     "FTHG", "FTAG", "Goals_home", "formPTS_away", "Goals_away",
-    "W_home", "D_home", "L_home"
+    "W_home", "D_home", "L_home", "W_away", "D_away", "L_away"
 ]
 
 

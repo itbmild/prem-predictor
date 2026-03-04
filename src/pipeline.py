@@ -61,13 +61,22 @@ class DataPipeline:
                                       self.config.yearly_prefix
                                       )
 
+        # save stacked processed seasons (short format)
         stacked_short = self.transformer.concat_dfs(processed_seasons)
-
-        # save stacked dataframe in short format
         self.writer.save_to_dir(stacked_short, 
                                 self.config.path("short_stacked_dir"),
                                 self.config.short_stacked_filename
                                 )
+        
+        # save stacked processed seasons (team-match format)
+        
+        stacked_team_match = self.transformer.concat_dfs(per_team_matches)
+        self.writer.save_to_dir(stacked_team_match,
+                                self.config.path("team_match_stacked_dir"),
+                                self.config.team_match_stacked_filename
+                                )
+
+
     def run(self):
         """
         Runs entire pipeline process

@@ -43,9 +43,18 @@ pipeline:
   # stacked (team-match) format
   team_match_stacked_dir: "./data/processed/inputs"
   team_match_stacked_filename: "stacked-team-match"
+
+  # opponent features
+  opp_features:
+    ["YC", "RC", "Goals", "Form", "AVG_YC", "AVG_RC", "prevPTS", "W", "D", "L", ]
   
 
-
+transformer:
+  opp_features:
+    [
+      "Date","Opponent","YC", "RC", "Goals", "Form", "AVG_YC", "AVG_RC", "prevPTS",
+      "GF", "GA", "SSN_YC", "SSN_RC", "AVG_SOT", "formH2H", "avg_H2H_goals"
+    ]
 
 
 

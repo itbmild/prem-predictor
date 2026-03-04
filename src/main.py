@@ -70,10 +70,10 @@ class PipelineOrchestrator:
         combined_features = [
             HeadToHeadFeatures(
                 window_size=features['window_size'],
-                target_name_pairs=features['target_name_pairs']
+                target_name_pairs=features['h2h_pairs']
             )
         ]
-        return DataTransformer(feature_types, combined_features)
+        return DataTransformer(feature_types, combined_features, self.config.transformer)
     
     def process_data(self):
         """ Takes raw data and processes it to prepare for model input """

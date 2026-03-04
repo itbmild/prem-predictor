@@ -3,10 +3,12 @@ import pandas as pd
 from _collections_abc import Callable
 from .features import BaseFeatures
 
+
 class DataTransformer:
-    def __init__(self, per_season_steps: list[BaseFeatures]=[], combined_steps: list[BaseFeatures]=[]):
+    def __init__(self, per_season_steps: list[BaseFeatures]=[], combined_steps: list[BaseFeatures]=[], config=None):
         self.per_season_steps = per_season_steps
         self.combined_steps = combined_steps
+        self.config = config
 
     def _convert_to_datetime(self, match_data: pd.DataFrame) -> pd.DataFrame:
         match_data["Date"] = pd.to_datetime(match_data["Date"], format="mixed", dayfirst=True)
@@ -374,17 +376,21 @@ class DataTransformer:
 
         # resplit into per-season
         processed_seasons = []
-        final_team_match = []
+        final_team_matches = []
         for i, group in combined.groupby('season', sort=True):
             clean = group.drop(columns=['season'])
-            final_team_match.append(clean)
 
+            # team-match format -> short format
             final_df = self.reformat_matches(clean)
             final_df = self.add_WDL(final_df)
             processed_seasons.append(final_df)
+            
+            clean = self._opp_features(clean)
+            final_team_matches.append(clean)
 
 
-        return processed_seasons, final_team_match
+
+        return processed_seasons, final_team_matches
 
         ####################
         seasons_processed = self.batch(seasons, lambda s: self.clean(s, COLS_TO_KEEP))
@@ -418,3 +424,18 @@ class DataTransformer:
 
         df = df.sort_values('Date')
         return df
+
+    def _opp_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Takes a dataframe in team-match format and joins opposition stats with Team row """
+        opp_f = df[self.config.opp_features].copy()
+
+        df = pd.merge(
+            df,
+            opp_f,
+            left_on=["Date", "Team"],
+            right_on=["Date", "Opponent"],
+            suffixes=("", '_opp')
+        ).drop(columns=["Opponent_opp"])
+        print(df)
+        return df
+        
