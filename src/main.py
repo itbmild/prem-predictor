@@ -40,6 +40,8 @@ from processing.writer import Writer
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
 from pipeline import DataPipeline
+from models.trainer import Trainer
+from pathlib import Path
 
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
@@ -80,29 +82,62 @@ class PipelineOrchestrator:
         pl = DataPipeline(self.loader, self.transformer, self.writer, self.config.pipeline)
         pl.run()
 
-    def train_model(self):
-        pass
+    def train(self, model: str):
+        """
+        Runs training on specified model type and saves to 
+        directory specified in config.yaml
+        """
+        # training is dependent on the type of model, which is fed through commandline
+        # type of trainer is instantiated based on the model type
+        if model == "nn":
+            trainer = Trainer
 
-    def eval_model(self):
-        pass
+
+
+    def evaluate(self):
+        print("evaluating")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Premier League Predictor")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    parser.add_argument("--config", type=str, default="config.yaml", help="Path to config file")
+
     # Data Pipeline command
-    prepare_parser = subparsers.add_parser("prepare", help="Pre-processese raw match data")
+    prepare_parser = subparsers.add_parser("prepare", help="Pre-processes raw match data")
     prepare_parser.add_argument("--input_dir", type=str, default="./data/raw", help="Path to folder containing the raw CSV data")
     prepare_parser.add_argument("--save-to", type=str, default="./data/cleaned")
+    
+    # Train command
+    train_parser = subparsers.add_parser("train", help="Train a specific model")
+    train_parser.add_argument("--model", type=str, choices=["xgboost", "nn"], required=True)
+
+    # Evaluate command
+    eval_parser = subparsers.add_parser("evaluate", help="Runs inference on test set and reports results")
+    eval_parser.add_argument("--model", type=str, choices=["xgboost", "nn"], required=True)
+
     args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        return
+    
+    orchestrator = PipelineOrchestrator(args.config)
+
+
     # need to instantiate a loader and writer
     if args.command == "prepare":
         # Data pipeline logic goes in here 
         # we basically just want to store the cleaned data as one big stacked up DF.
         # we can do the train/val/test split later on based on the information that each season
-        pass
-    else:
-        print("how did you get here?")
+        orchestrator.process_data()
+    elif args.command == "train":
+        orchestrator.train(args.model)
+    elif args.command == "evaluate":
+        print("evaluating")
+        orchestrator.evaluate()
+
 
 def load_data(self) -> pd.DataFrame:
     pass
@@ -119,6 +154,8 @@ def test():
 
 
 if __name__ == "__main__":
-    test()
+    # BASE_DIR = Path(__file__).resolve().parent
+    # CONFIG_PATH = BASE_DIR / "config.yaml"
+    main()
     # main()
 

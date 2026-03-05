@@ -15,7 +15,6 @@ features:
     "PTS": "prevPTS"
 
 # constants needed for the pipeline
-
 pipeline:
   raw_data_dir: "./data/raw"
   cols: 
@@ -48,7 +47,6 @@ pipeline:
   opp_features:
     ["YC", "RC", "Goals", "Form", "AVG_YC", "AVG_RC", "prevPTS", "W", "D", "L", ]
   
-
 transformer:
   opp_features:
     [
@@ -56,6 +54,12 @@ transformer:
       "GF", "GA", "SSN_YC", "SSN_RC", "AVG_SOT", "formH2H", "avg_H2H_goals"
     ]
 
-
+model:
+  nn:
+    # constants here for neural network
+    lr: 0.0005
+    weight_decay: 0
+    epochs: 100
+    
 
 

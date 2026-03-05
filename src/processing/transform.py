@@ -384,7 +384,7 @@ class DataTransformer:
             final_df = self.reformat_matches(clean)
             final_df = self.add_WDL(final_df)
             processed_seasons.append(final_df)
-            
+
             clean = self._opp_features(clean)
             final_team_matches.append(clean)
 
@@ -436,6 +436,5 @@ class DataTransformer:
             right_on=["Date", "Opponent"],
             suffixes=("", '_opp')
         ).drop(columns=["Opponent_opp"])
-        print(df)
         return df
         
