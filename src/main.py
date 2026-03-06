@@ -94,12 +94,9 @@ class PipelineOrchestrator:
         Runs training on specified model type and saves to 
         directory specified in config.yaml
         """
-        splitter = Splitter(self.config.model[model])
-        train_df, val_df, _ = splitter.get_splits()
-
-
-        trainer = self._get_trainer(model, train_df, val_df)
-        # trainer.train()
+        
+        trainer = self._get_trainer(model)
+        trainer.train()
 
     def _get_trainer(self, model_type: str):
         """ method for returning the model-specific trainer """

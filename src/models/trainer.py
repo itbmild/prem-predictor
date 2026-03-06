@@ -1,5 +1,6 @@
 import torch
 from models.modules import NeuralNet
+from dataset import PLDataModule
 
 class NNTrainer:
     """ Trainer class for Neural Network """
@@ -28,8 +29,6 @@ class NNTrainer:
         )
         self.train_loader = train_loader
         self.val_loader = val_loader
-
-        
 
     def _run_epoch(self, loader, training: bool):
         """ Private method for one pass """

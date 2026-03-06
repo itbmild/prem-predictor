@@ -105,12 +105,12 @@ model:
       - "Goals_away"
 
     inter_dims: 64
-  
+
     # paths for data
     processed: "./data/processed/inputs/stacked-short.csv" # BE SURE TO SET THIS TO PATH OF PROCESSED SHORT FORMAT DATA
-    training: "./data/processed/nn_splits/training.csv"
-    validation: "./data/processed/nn_splits/validation.csv"
-    test: "./data/processed/nn_splits/test.csv"
+    training_path: "./data/processed/inputs/short/training.csv"
+    validation_path: "./data/processed/inputs/short/validation.csv"
+    test_path: "./data/processed/inputs/short/test.csv
 
 
 
