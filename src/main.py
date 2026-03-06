@@ -40,11 +40,18 @@ from processing.writer import Writer
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
 from pipeline import DataPipeline
-from models.trainer import Trainer
+from models.trainer import NNTrainer
+from models.splits import SplitProvider
 from pathlib import Path
 
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
+
+    TRAINER_MAP = {
+        "nn": NNTrainer,
+        # "xgboost": XGBTrainer
+    }
+
     def __init__(self, config_path):
         with open(config_path, 'r') as f:
             self.config = Config(yaml.safe_load(f))
@@ -87,16 +94,31 @@ class PipelineOrchestrator:
         Runs training on specified model type and saves to 
         directory specified in config.yaml
         """
-        # training is dependent on the type of model, which is fed through commandline
-        # type of trainer is instantiated based on the model type
-        if model == "nn":
-            trainer = Trainer
+        splitter = Splitter(self.config.model[model])
+        train_df, val_df, _ = splitter.get_splits()
 
 
+        trainer = self._get_trainer(model, train_df, val_df)
+        # trainer.train()
+
+    def _get_trainer(self, model_type: str):
+        """ method for returning the model-specific trainer """
+        trainer = self.TRAINER_MAP.get(model_type)
+        model_cfg = self.config.model[model_type]
+        return trainer(model_cfg)
+
+    def _get_data_adapter(self, model_type: str):
+        """ 
+        Returns adapter wrapper for specific model type 
+        
+        All models require different loader types, this wrapper returns
+        loader type specific to model implementation
+        """
+        # adapter
+        # pass
 
     def evaluate(self):
         print("evaluating")
-
 
 def main():
     parser = argparse.ArgumentParser(description="Premier League Predictor")
@@ -120,12 +142,11 @@ def main():
     args = parser.parse_args()
     
     if not args.command:
-        parser.print_help()
+        parser.print_help()            
         return
     
     orchestrator = PipelineOrchestrator(args.config)
-
-
+   
     # need to instantiate a loader and writer
     if args.command == "prepare":
         # Data pipeline logic goes in here 
@@ -135,8 +156,7 @@ def main():
     elif args.command == "train":
         orchestrator.train(args.model)
     elif args.command == "evaluate":
-        print("evaluating")
-        orchestrator.evaluate()
+        orchestrator.evaluate(args.model)
 
 
 def load_data(self) -> pd.DataFrame:

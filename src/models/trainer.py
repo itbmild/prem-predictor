@@ -1,7 +1,8 @@
 import torch
+from models.modules import NeuralNet
 
-class Trainer:
-    """ Class for training premier league prediction model """
+class NNTrainer:
+    """ Trainer class for Neural Network """
     def __init__(self, model, train_loader, val_loader, criterion, optimizer, device, scheduler=None):
         self.model = model
         self.train_loader = train_loader
@@ -12,6 +13,23 @@ class Trainer:
         self.scheduler = scheduler
         self.train_losses = []
         self.val_losses = []
+
+    def __init__(self, train_loader, val_loader, config):
+        self.config = config
+        # Hyperparameters
+        self.epochs = config.epochs
+        self.lr = config.lr
+        input_dims = len(config.features)
+        output_dims = len(config.labels)
+        self.model = NeuralNet(
+            input_dims=input_dims,
+            inter_dims=self.config.inter_dims,
+            output_dims=output_dims
+        )
+        self.train_loader = train_loader
+        self.val_loader = val_loader
+
+        
 
     def _run_epoch(self, loader, training: bool):
         """ Private method for one pass """
@@ -47,10 +65,18 @@ class Trainer:
             self.train_losses.append(train_loss)
             self.val_losses.append(val_loss)
             
-            print(f"Epoch [{epoch+1}/{epochs}], Training Loss: {train_loss:.5f} Validation Loss: {val_loss:.5f}")
+            print(f"Epoch [{epoch+1}/{epochs}], Training Loss: {train_loss:.5f} Validation Loss: {val_loss:.5f}")    
 
     def save_model(self, path):
         torch.save(self.model.state_dict(), path)
 
     def get_model(self):
         return self.model
+    
+
+class XGBTrainer:
+    """ Trainer for XGBoost model """
+    def __init__(self, model):
+        pass
+
+    

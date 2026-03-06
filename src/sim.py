@@ -10,7 +10,6 @@ from processing.writer import Writer
 
 from utils import PREDICTIONS_PATH, PROB_COLS, TEST_DATA_PATH, DATA_23, DATA_24, BET365, BET_365_C
 
-
 class MatchSimulator:
     def __init__(self, n_sims: int):
         self.n_sims = n_sims

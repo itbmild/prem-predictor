@@ -16,6 +16,8 @@ features:
 
 # constants needed for the pipeline
 pipeline:
+  season_length: 380
+  splits: [0.7, 0.1, 0.2]
   raw_data_dir: "./data/raw"
   cols: 
     [
@@ -43,6 +45,11 @@ pipeline:
   team_match_stacked_dir: "./data/processed/inputs"
   team_match_stacked_filename: "stacked-team-match"
 
+  # paths for train/val/test splits
+  short_splits_dir: "./data/processed/inputs/short"
+  team_match_splits_dir: "./data/processed/inputs/team-match"
+
+
   # opponent features
   opp_features:
     ["YC", "RC", "Goals", "Form", "AVG_YC", "AVG_RC", "prevPTS", "W", "D", "L", ]
@@ -56,10 +63,54 @@ transformer:
 
 model:
   nn:
+    split_props: [70,10,20]
     # constants here for neural network
     lr: 0.0005
     weight_decay: 0
     epochs: 100
-    
+
+    # feature columns
+    features:
+      # home team features
+      - "YC_home"
+      - "RC_home"
+      - "Form_home"
+      - "AVG_YC_home"
+      - "AVG_RC_home"
+      - "prevPTS_home"
+      - "GF_home"
+      - "GA_home"
+      - "SSN_YC_home"
+      - "SSN_RC_home"
+      - "AVG_SOT_home"
+      - "formH2H_home"
+      - "avg_H2H_goals_home"
+      # away team features
+      - "YC_away"
+      - "RC_away"
+      - "Form_away"
+      - "AVG_YC_away"
+      - "AVG_RC_away"
+      - "prevPTS_away"
+      - "GF_away"
+      - "GA_away"
+      - "SSN_YC_away"
+      - "SSN_RC_away"
+      - "AVG_SOT_away"
+      - "formH2H_away"
+      - "avg_H2H_goals_away"
+
+    labels:
+      - "Goals_home"
+      - "Goals_away"
+
+    inter_dims: 64
+  
+    # paths for data
+    processed: "./data/processed/inputs/stacked-short.csv" # BE SURE TO SET THIS TO PATH OF PROCESSED SHORT FORMAT DATA
+    training: "./data/processed/nn_splits/training.csv"
+    validation: "./data/processed/nn_splits/validation.csv"
+    test: "./data/processed/nn_splits/test.csv"
+
 
 

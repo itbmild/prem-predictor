@@ -171,5 +171,5 @@ class PrevSeasonFeatures(BaseFeatures):
         )
 
         df[self.cols] = df[self.cols].fillna(baseline)
-        df = df.rename(columns=self.rename)
+        df = df.rename(columns=dict(self.rename))
         return df 

@@ -3,9 +3,6 @@ import pandas as pd
 from pathlib import Path
 
 class Writer:
-    def __init__(self):
-        pass
-
     def save_to_dir(self, df: pd.DataFrame, dir: str, filename: str):
         """Saves given pandas dataframe to directory in CSV format
 

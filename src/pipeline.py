@@ -69,13 +69,61 @@ class DataPipeline:
                                 )
         
         # save stacked processed seasons (team-match format)
-        
         stacked_team_match = self.transformer.concat_dfs(per_team_matches)
         self.writer.save_to_dir(stacked_team_match,
                                 self.config.path("team_match_stacked_dir"),
                                 self.config.team_match_stacked_filename
                                 )
+        
+        # save train/val/test splits in short format
+        short_train, short_val, short_test = self._get_splits(stacked_short)
+        self._save_splits(self.config.path("short_splits_dir") ,short_train, short_val, short_test)
 
+        tm_train, tm_val, tm_test = self._get_splits(stacked_team_match)
+        self._save_splits(self.config.path("team_match_splits_dir"),tm_train, tm_val, tm_test)
+
+    def _save_splits(self, dir, train, val, test):
+        self.writer.save_to_dir(train, dir, "train")
+        self.writer.save_to_dir(val, dir, "val")
+        self.writer.save_to_dir(test, dir, "test")
+
+
+        
+
+
+
+
+
+        
+
+    def _get_splits(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Takes stacked dataframe (in short or team-match format) and returns train/val/test dfs """
+        splits = self.config.splits
+        train_p, val_p, test_p = splits[0], splits[1], splits[2]
+
+        if train_p + val_p + test_p != 1:
+            raise ValueError(f"train/val/test split proportions must sum to 1. Instead summed to {train_p + val_p + test_p}")
+
+        
+        start_idx = self.config.season_length
+        rows = len(df) - start_idx
+
+        # need to find the cutoff indices for each ting
+        train_cutoff = start_idx + int(train_p * rows)
+        val_cutoff = int(val_p * rows) + train_cutoff
+        print(train_cutoff)
+
+
+        train_df = df[start_idx:train_cutoff]
+        val_df = df[train_cutoff:val_cutoff]
+        test_df = df[val_cutoff:rows]
+
+        # print(len(train_df))
+        # print(len(val_df))
+        # print(len(test_df))
+
+        return train_df, val_df, test_df
+        
 
     def run(self):
         """

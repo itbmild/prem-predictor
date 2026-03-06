@@ -7,8 +7,10 @@ class Loader:
     Loads Premier league season as dataframe given filepath
     """
     def load(self, file_path) -> pd.DataFrame:
+        BASE_DIR = Path().resolve().parent
+        full_path = BASE_DIR / file_path
         try:
-            return pd.read_csv(file_path)
+            return pd.read_csv(full_path)
         except FileNotFoundError as e:
             raise Exception(f"File not found: {e}")
 
@@ -32,4 +34,4 @@ class Loader:
         # need to open the directory, return the files as a list
         return list(Path(filepath).glob("*.csv"))
     
-        
+           

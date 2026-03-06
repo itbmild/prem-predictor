@@ -12,6 +12,13 @@ class Config(dict):
             return Config(value)
         else:
             return value
+        
+    def __getitem__(self, key: str):
+        value = super().__getitem__(key)
+        if isinstance(value, dict):
+            return Config(value)
+        else:
+            return value
     
     def path(self, path: str) -> str:
         BASE = Path(__file__).resolve().parent.parent
