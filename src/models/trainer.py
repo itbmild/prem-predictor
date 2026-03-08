@@ -1,34 +1,32 @@
 import torch
+import yaml
+import joblib
 from models.modules import NeuralNet
-from dataset import PLDataModule
+# from dataset import PLDataModule
+from sklearn.preprocessing import StandardScaler
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from datetime import datetime
+from pathlib import Path
 
 class NNTrainer:
     """ Trainer class for Neural Network """
-    def __init__(self, model, train_loader, val_loader, criterion, optimizer, device, scheduler=None):
+    def __init__(self, model, train_loader, val_loader, scaler, config):
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
-        self.criterion = criterion
-        self.optimizer = optimizer
-        self.device = device
-        self.scheduler = scheduler
-        self.train_losses = []
-        self.val_losses = []
-
-    def __init__(self, train_loader, val_loader, config):
+        self.scaler = scaler
         self.config = config
         # Hyperparameters
         self.epochs = config.epochs
         self.lr = config.lr
-        input_dims = len(config.features)
-        output_dims = len(config.labels)
-        self.model = NeuralNet(
-            input_dims=input_dims,
-            inter_dims=self.config.inter_dims,
-            output_dims=output_dims
-        )
-        self.train_loader = train_loader
-        self.val_loader = val_loader
+        self.wd = config.weight_decay
+
+        self.criterion = torch.nn.MSELoss()
+        self.optimizer = torch.optim.AdamW(model.parameters(), lr=self.lr, weight_decay=self.wd)
+        self.scheduler = CosineAnnealingLR(self.optimizer, T_max=100, eta_min=1e-6)
+
+        self.train_losses = []
+        self.val_losses = []
 
     def _run_epoch(self, loader, training: bool):
         """ Private method for one pass """
@@ -39,7 +37,7 @@ class NNTrainer:
 
         loss_acc = 0.0
         for features, labels in loader:
-            features, labels = features.to(self.device), labels.to(self.device)
+            # features, labels = features.to(self.device), labels.to(self.device)
             
             # forward pass
             outputs = self.model(features)
@@ -53,8 +51,8 @@ class NNTrainer:
             loss_acc += loss.item()
         return loss_acc / len(loader)
 
-    def train(self, epochs):
-        for epoch in range(epochs):
+    def train(self):
+        for epoch in range(self.epochs):
             train_loss = self._run_epoch(self.train_loader, training=True)
             val_loss = self._run_epoch(self.val_loader, training=False)
 
@@ -64,18 +62,20 @@ class NNTrainer:
             self.train_losses.append(train_loss)
             self.val_losses.append(val_loss)
             
-            print(f"Epoch [{epoch+1}/{epochs}], Training Loss: {train_loss:.5f} Validation Loss: {val_loss:.5f}")    
+            print(f"Epoch [{epoch+1}/{self.epochs}], Training Loss: {train_loss:.5f} Validation Loss: {val_loss:.5f}")    
 
     def save_model(self, path):
-        torch.save(self.model.state_dict(), path)
+        """ Saves model with scaler and config file """
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        save_dir = Path(path) / "neural_networks" / f"nn_{ts}"
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        joblib.dump(self.scaler, save_dir / "scaler.pkl")
+
+        with open(save_dir / "model_config.yaml", "w") as f:
+            yaml.dump(dict(self.config), f)
+        
+        torch.save(self.model.state_dict(), save_dir / "model.pth")
 
     def get_model(self):
         return self.model
-    
-
-class XGBTrainer:
-    """ Trainer for XGBoost model """
-    def __init__(self, model):
-        pass
-
-    

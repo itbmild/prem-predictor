@@ -62,13 +62,15 @@ transformer:
     ]
 
 model:
+  save_path: "../trained_models/"
   nn:
     split_props: [70,10,20]
     # constants here for neural network
-    lr: 0.0005
-    weight_decay: 0
-    epochs: 100
-
+    lr: 0.001
+    weight_decay: 0.0005
+    epochs: 60
+    batch_size: 64
+    scale: True
     # feature columns
     features:
       # home team features
@@ -104,13 +106,16 @@ model:
       - "Goals_home"
       - "Goals_away"
 
-    inter_dims: 64
+    eval_labels:
+      - "W_home"
+      - "D_home"
+      - "L_home"
 
+    inter_dims: 32
     # paths for data
     processed: "./data/processed/inputs/stacked-short.csv" # BE SURE TO SET THIS TO PATH OF PROCESSED SHORT FORMAT DATA
-    training_path: "./data/processed/inputs/short/training.csv"
-    validation_path: "./data/processed/inputs/short/validation.csv"
-    test_path: "./data/processed/inputs/short/test.csv
-
+    training_path: "./data/processed/inputs/short/train.csv"
+    validation_path: "./data/processed/inputs/short/val.csv"
+    test_path: "./data/processed/inputs/short/test.csv"
 
 

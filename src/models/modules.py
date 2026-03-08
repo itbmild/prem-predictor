@@ -3,11 +3,12 @@ import torch.nn as nn
 import torch
 
 class BasicBlock(nn.Module):
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, dropout=0.3):
         super(BasicBlock, self).__init__()
         self.block = nn.Sequential(
             nn.Linear(in_features, out_features),
             nn.ReLU(),
+            nn.Dropout(dropout)
         )
     
     def forward(self, x):
@@ -23,7 +24,6 @@ class NeuralNet(nn.Module):
 
         self.fc1 = nn.Linear(input_dims, inter_dims)
         self.fc2 = nn.Linear(inter_dims, inter_dims)
-
 
         # self.block3 = BasicBlock(inter_dims, inter_dims)
         self.regression = nn.Linear(inter_dims , output_dims)

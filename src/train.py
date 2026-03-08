@@ -51,6 +51,9 @@ def main():
     trainer = Trainer(model, train_loader, val_loader, criterion, optimizer, device, scheduler=scheduler)
 
     trainer.train(num_epochs)
+    # by this point, the model is trained and can be saved using the writer
+
+
     trainer.save_model(MODEL_PATH)
 
     # need a way to validate how the model performs on test data in terms of actually predicting the correct outcome

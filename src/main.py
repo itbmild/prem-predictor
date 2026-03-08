@@ -34,24 +34,25 @@ dumps in files | trains model       | reports results
 import argparse
 import yaml
 import pandas as pd
+import torch
 from config import Config
 from processing.loader import Loader
 from processing.writer import Writer
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
+from models.dataset import PLDataModule, PLDataset
 from pipeline import DataPipeline
 from models.trainer import NNTrainer
-from models.splits import SplitProvider
+
+from models.modules import NeuralNet
+
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader
+
 from pathlib import Path
 
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
-
-    TRAINER_MAP = {
-        "nn": NNTrainer,
-        # "xgboost": XGBTrainer
-    }
-
     def __init__(self, config_path):
         with open(config_path, 'r') as f:
             self.config = Config(yaml.safe_load(f))
@@ -59,6 +60,7 @@ class PipelineOrchestrator:
         self.loader = Loader()
         self.writer = Writer()
         self.transformer = self._create_transformer()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def _create_transformer(self):
         """
@@ -94,28 +96,65 @@ class PipelineOrchestrator:
         Runs training on specified model type and saves to 
         directory specified in config.yaml
         """
-        
-        trainer = self._get_trainer(model)
+        model_config = self.config.model[model]
+
+        if model == "nn":
+            trainer = self._setup_nn(model_config)
+        elif model == "xgboost":
+            # trainer = self._setup_xgboost(model_config)
+            pass
+
         trainer.train()
+        trainer.save_model(self.config.model.save_path)
+
+    def _setup_nn(self, model_config):
+        train_matches = self.loader.load(model_config.training_path)
+        val_matches = self.loader.load(model_config.validation_path)
+
+        scaler = StandardScaler()
+        scaler.set_output(transform="pandas")
+        scaler.fit(train_matches[model_config.features])
+
+        # need loaders
+        train_dataset = PLDataset(train_matches, model_config, scaler)
+        val_dataset = PLDataset(val_matches, model_config, scaler)
+
+        train_loader = DataLoader(train_dataset, batch_size=model_config.batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=model_config.batch_size, shuffle=True)
+
+        model = NeuralNet(len(model_config.features), inter_dims=model_config.inter_dims)
+        return NNTrainer(model, train_loader, val_loader, scaler, model_config)
 
     def _get_trainer(self, model_type: str):
         """ method for returning the model-specific trainer """
-        trainer = self.TRAINER_MAP.get(model_type)
-        model_cfg = self.config.model[model_type]
-        return trainer(model_cfg)
-
-    def _get_data_adapter(self, model_type: str):
-        """ 
-        Returns adapter wrapper for specific model type 
-        
-        All models require different loader types, this wrapper returns
-        loader type specific to model implementation
-        """
-        # adapter
-        # pass
+        if model_type == "nn":
+            return self._get_nn_trainer
+        elif model_type == "xgboost":
+            pass
 
     def evaluate(self):
         print("evaluating")
+
+    def _get_nn_trainer(self, model_config):
+        # what do we need?
+        train_matches = self.loader.load(model_config.training_path)
+        val_matches = self.loader.load(model_config.validation_path)
+
+        scaler = StandardScaler()
+        scaler.set_output(transform="pandas")
+        scaler.fit(train_matches[model_config.features])
+
+        # need loaders
+        train_dataset = PLDataset(train_matches, model_config, scaler)
+        val_dataset = PLDataset(val_matches, model_config, scaler)
+
+        train_loader = DataLoader(train_dataset, batch_size=model_config.batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=model_config.batch_size, shuffle=True)
+
+        model = NeuralNet(len(model_config.features), inter_dims=model_config.inter_dims)
+        return NNTrainer(model, train_loader, val_loader, model_config)
+
+        
 
 def main():
     parser = argparse.ArgumentParser(description="Premier League Predictor")
@@ -164,8 +203,6 @@ def load_data(self) -> pd.DataFrame:
 def test():
     # runs a test example thingamabob
     orc_path = "./config.yaml"
-
-
     pl = PipelineOrchestrator(orc_path)
     pl.process_data()
 

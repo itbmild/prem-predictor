@@ -77,24 +77,15 @@ class DataPipeline:
         
         # save train/val/test splits in short format
         short_train, short_val, short_test = self._get_splits(stacked_short)
-        self._save_splits(self.config.path("short_splits_dir") ,short_train, short_val, short_test)
+        self._save_splits(self.config.path("short_splits_dir"), short_train, short_val, short_test)
 
         tm_train, tm_val, tm_test = self._get_splits(stacked_team_match)
-        self._save_splits(self.config.path("team_match_splits_dir"),tm_train, tm_val, tm_test)
+        self._save_splits(self.config.path("team_match_splits_dir"), tm_train, tm_val, tm_test)
 
     def _save_splits(self, dir, train, val, test):
         self.writer.save_to_dir(train, dir, "train")
         self.writer.save_to_dir(val, dir, "val")
         self.writer.save_to_dir(test, dir, "test")
-
-
-        
-
-
-
-
-
-        
 
     def _get_splits(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Takes stacked dataframe (in short or team-match format) and returns train/val/test dfs """
