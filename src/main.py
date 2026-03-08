@@ -17,6 +17,10 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 from pathlib import Path
 
+# model saving (WIP)
+from registry.registry import ModelRegistry
+from registry.model_saver import ModelSaver
+
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
     def __init__(self, config_path):
@@ -25,6 +29,11 @@ class PipelineOrchestrator:
 
         self.loader = Loader()
         self.writer = Writer()
+
+        # model saving classes
+        self.registry = ModelRegistry(self.config.registry_path)
+        self.saver = ModelSaver(self.config.artifacts_path)
+
         self.transformer = self._create_transformer()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -71,7 +80,29 @@ class PipelineOrchestrator:
             pass
 
         trainer.train()
-        trainer.save_model(self.config.model.save_path)
+        model_id = self._generate_model_id()
+        metrics = trainer.get_metrics()
+
+        artifact_path = self.saver.save_model(
+            model_id=model_id,
+            model=trainer.get_model(),
+            scaler=trainer.get_scaler(),
+            config=model_config,
+            metrics=metrics
+        )
+
+        self.registry.register(
+            model_id=model_id,
+            artifact_path=artifact_path,
+            metrics=metrics,
+            hyperparams=trainer.get_hyperparams()
+        )
+        
+        # lets check to see if our model has been stored with the correct hyperparameters
+        # what is needed for this? our reporting mechanism should belong to the registry class
+        
+
+        # trainer.save_model(self.config.model.save_path)
 
     def _setup_nn(self, model_config):
         train_matches = self.loader.load(model_config.training_path)

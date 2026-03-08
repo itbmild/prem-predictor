@@ -1,3 +1,5 @@
+registry_path: "./registry/models.json"
+artifacts_path: "./artifacts"
 features:
   window_size: 5
   target_name_pairs:

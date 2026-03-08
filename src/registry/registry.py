@@ -9,6 +9,16 @@ class ModelRegistry:
     Contains JSON index file storing data for trained models. Each entry
     references a model artifact directory containing all necessary model data
     (weights, scaler, config, metrics)
+
+    Entry is of the form:
+    {
+      "model_id": str,
+      "artifact_path": str,
+      "metrics": dict,
+      "status": str,
+      "time_created": str
+      "hyperparameters": dict
+    }
     """
     def __init__(self, registry_path: str):
         self.registry_path = Path(registry_path)
@@ -20,14 +30,15 @@ class ModelRegistry:
 
         self.registry = self._read_registry()
 
-    def register(self, model_id: str, artifact_path: str, metrics: dict):
+    def register(self, model_id: str, artifact_path: str, metrics: dict, hyperparams: dict):
         """ Registers a trained model """
         new_entry = {
             "model_id": model_id,
             "artifact_path": artifact_path,
             "metrics": metrics,
             "status": "archived",
-            "time_created": dt.now
+            "time_created": dt.now,
+            "hyperparameters": hyperparams
         }
 
         self.registry.append(new_entry)
@@ -54,7 +65,6 @@ class ModelRegistry:
         
         return latest
         
-
     def get_best(self) -> dict:
         """ Returns entry for current best model """
         for entry in self.registry:

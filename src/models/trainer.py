@@ -79,3 +79,28 @@ class NNTrainer:
 
     def get_model(self):
         return self.model
+
+    def get_scaler(self):
+        return self.scaler
+    
+    def get_metrics(self):
+        """ Returns accuracy and loss metrics for performance on validation set of trained model """
+        return {}
+    
+    def get_hyperparams(self):
+        """ Returns dict containing hyperparameter information
+         
+        Used for comparing trained models in registry  
+        """
+        return {
+            "learning rate": self.lr,
+            "epochs": self.epochs,
+            "weight decay": self.wd,
+            "batch_size": self.config.batch_size
+        }
+    
+    def get_architecture(self):
+        """ Returns dict containing architecture information about the network """
+        return {
+            "input dims": len(self.config.features)
+        }
