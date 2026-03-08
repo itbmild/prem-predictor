@@ -1,40 +1,9 @@
 """ CLI, entrypoint for Pipeline """
-
-"""
-can use argparse to setup CLI
-need clear image of how the pipeline works
-    
-Data pipeline:
-    
-LOADER(Raw Data) -> Pipeline -> refined matches
-    
-Training
-refined matches -> train/val/test splits
-train -> Trainer(train) -> model.pth -> Writer(model.pth) 
-Model is saved at specified directory
-    
-Evaluation
-Loader(test data)? -> Model(test_data)
-OR (depending on whether we have saved already or if we are going off previous loop)
-if neither, then send an error message along the lines of "no saved model"
-test data -> Model(test_data) -> simulate(output) -> compute brier score
-
-by this point, we have probabilities for all of the matches, and we have the brier score
-can compute additional metrics? i.e. direct xG comparison accuracy (w/ threshold)
-
-
-##### structure of the main file
-current structure is
-
-DataPipeline   | train              | eval
-calls run      | reads files        | loads model
-processes      | instantiates model | runs sim
-dumps in files | trains model       | reports results
-"""
 import argparse
 import yaml
 import pandas as pd
 import torch
+import datetime as dt
 from config import Config
 from processing.loader import Loader
 from processing.writer import Writer
@@ -43,12 +12,9 @@ from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevS
 from models.dataset import PLDataModule, PLDataset
 from pipeline import DataPipeline
 from models.trainer import NNTrainer
-
 from models.modules import NeuralNet
-
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
-
 from pathlib import Path
 
 class PipelineOrchestrator:
@@ -154,6 +120,11 @@ class PipelineOrchestrator:
         model = NeuralNet(len(model_config.features), inter_dims=model_config.inter_dims)
         return NNTrainer(model, train_loader, val_loader, model_config)
 
+    def _generate_model_id(self) -> str:
+        """ Generates unique identifier for trained model """
+        time = dt.now()
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        return f"model_{timestamp}"
         
 
 def main():
