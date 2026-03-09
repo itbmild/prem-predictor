@@ -44,7 +44,6 @@ class ModelRegistry:
         self.registry.append(new_entry)
         self._write_registry(self.registry)
         
-
     def get_model(self, model_id: str) -> dict:
         """ Returns model referenced by model_id """
         for entry in self.registry:

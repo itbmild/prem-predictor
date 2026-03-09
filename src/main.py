@@ -140,8 +140,10 @@ class PipelineOrchestrator:
         elif model_type == "xgboost":
             pass
 
-    def evaluate(self):
+    def evaluate(self, model_type: str):
         print("evaluating")
+
+
 
     def _get_nn_trainer(self, model_config):
         # what do we need?

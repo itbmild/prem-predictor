@@ -1,7 +1,7 @@
-from registry import ModelRegistry
+from registry.registry import ModelRegistry
 from pathlib import Path
 from models.modules import NeuralNet
-from ..config import Config
+from config import Config
 from sklearn.preprocessing import StandardScaler
 import yaml
 import torch
@@ -51,7 +51,3 @@ class ModelLoader:
     def _load_scaler(self, artifact_path: Path) -> StandardScaler:
         """ Loads scaler given path to model artifact, returns as resolved scaler object """
         return joblib.load(artifact_path / "scaler.pkl")
-
-
-
-

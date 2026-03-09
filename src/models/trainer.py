@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from datetime import datetime
 from pathlib import Path
 
-from ..config import Config
+from config import Config
 
 class NNTrainer:
     """ Trainer class for Neural Network """
