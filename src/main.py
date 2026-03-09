@@ -3,7 +3,7 @@ import argparse
 import yaml
 import pandas as pd
 import torch
-import datetime as dt
+from datetime import datetime as dt
 from config import Config
 from processing.loader import Loader
 from processing.writer import Writer
@@ -20,6 +20,7 @@ from pathlib import Path
 # model saving (WIP)
 from registry.registry import ModelRegistry
 from registry.model_saver import ModelSaver
+from registry.model_loader import ModelLoader
 
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
@@ -33,6 +34,8 @@ class PipelineOrchestrator:
         # model saving classes
         self.registry = ModelRegistry(self.config.registry_path)
         self.saver = ModelSaver(self.config.artifacts_path)
+        self.model_loader = ModelLoader(self.registry)
+
 
         self.transformer = self._create_transformer()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -100,7 +103,15 @@ class PipelineOrchestrator:
         
         # lets check to see if our model has been stored with the correct hyperparameters
         # what is needed for this? our reporting mechanism should belong to the registry class
-        
+        # we should have a function in our registry that prints out valuable information about each model
+
+
+        # lists all of the trained models and their information
+        self.registry.list_models()
+
+        # describes the model with the given id, basically just prints the corresponding entry
+        self.registry.describe_model(model_id)
+
 
         # trainer.save_model(self.config.model.save_path)
 
@@ -155,7 +166,8 @@ class PipelineOrchestrator:
         """ Generates unique identifier for trained model """
         time = dt.now()
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        return f"model_{timestamp}"
+        # return f"model_{timestamp}"
+        return timestamp
         
 
 def main():

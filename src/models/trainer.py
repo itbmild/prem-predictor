@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
 import yaml
 import joblib
 from models.modules import NeuralNet
@@ -8,9 +10,11 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from datetime import datetime
 from pathlib import Path
 
+from ..config import Config
+
 class NNTrainer:
     """ Trainer class for Neural Network """
-    def __init__(self, model, train_loader, val_loader, scaler, config):
+    def __init__(self, model: nn.Module, train_loader: DataLoader, val_loader: DataLoader, scaler: StandardScaler, config: Config):
         self.model = model
         self.train_loader = train_loader
         self.val_loader = val_loader
@@ -28,7 +32,7 @@ class NNTrainer:
         self.train_losses = []
         self.val_losses = []
 
-    def _run_epoch(self, loader, training: bool):
+    def _run_epoch(self, loader: DataLoader, training: bool):
         """ Private method for one pass """
         if training:
             self.model.train()
@@ -85,7 +89,10 @@ class NNTrainer:
     
     def get_metrics(self):
         """ Returns accuracy and loss metrics for performance on validation set of trained model """
-        return {}
+        return {
+            "acc": 0,
+            "loss": self.val_losses[-1]
+        }
     
     def get_hyperparams(self):
         """ Returns dict containing hyperparameter information
@@ -96,7 +103,7 @@ class NNTrainer:
             "learning rate": self.lr,
             "epochs": self.epochs,
             "weight decay": self.wd,
-            "batch_size": self.config.batch_size
+            "batch size": self.config.batch_size
         }
     
     def get_architecture(self):

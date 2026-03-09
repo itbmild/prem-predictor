@@ -9,7 +9,7 @@ class ModelSaver:
     Class for saving model artifacts locally
     """
     def __init__(self, artifacts_dir: str):
-        self.artifacts_dir = artifacts_dir
+        self.artifacts_dir = Path(artifacts_dir)
 
     def save_model(self, model_id, model, scaler, config, metrics) -> Path:
         """ Saves model artifact to artifacts directory and returns path """
@@ -29,8 +29,8 @@ class ModelSaver:
         # save metrics so model can be compared to other models
         with open(artifact_path / "metrics.json", "w") as f:
             json.dump(metrics, f, indent=2)
-        
-        return artifact_path
+
+        return str(artifact_path)
         
 
     

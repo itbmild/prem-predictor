@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-import datetime as dt
+from datetime import datetime as dt
 
 class ModelRegistry:
     """
@@ -37,7 +37,7 @@ class ModelRegistry:
             "artifact_path": artifact_path,
             "metrics": metrics,
             "status": "archived",
-            "time_created": dt.now,
+            "time_created": dt.now().strftime("%Y/%m/%d %H:%M:%S"),
             "hyperparameters": hyperparams
         }
 
@@ -103,3 +103,62 @@ class ModelRegistry:
         """ Write registry JSON file """
         with open(self.registry_path, "w") as f:
             json.dump(registry, f, indent=2)
+
+    def list_models(self):
+        """ Prints information about each model in the registry to stdout """
+        if not len(self.registry):
+            # registry is empty
+            print("no models have been registered, to register a model use train argument")
+            return
+        
+        bar = "-" * 80
+        print("\nTRAINED MODELS")
+        print(bar)
+        print(f"{'MODEL ID':20} {'STATUS':10} {'VAL ACC':10} {'VAL LOSS':10} {'TIME CREATED':10}")
+        print(bar)
+
+        # iterate through registry
+        for entry in self.registry:
+            model_id = entry["model_id"]
+            status = entry["status"]
+
+            metrics = entry["metrics"]
+            val_acc = metrics["acc"]
+            val_loss = metrics["loss"]
+
+            time_created = entry["time_created"]
+
+            print(f"{model_id:20} {status:10} {val_acc:<10.4f} {val_loss:<10.4f} {time_created:10}")
+
+    def describe_model(self, model_id: str):
+        # NOTE if we decide to add more model types, we need 
+        # to either do model specific printing or generic dict printing for sections
+        """ Prints all information stored in registry about a specific model to stdout """
+        entry = self.get_model(model_id)
+        
+        bar = "-" * 60
+        print("\nMODEL DETAILS")
+        print(bar)
+
+        print(f"Model ID:         {entry["model_id"]}")
+        print(f"Status:           {entry["status"]}")
+        print(f"Time Created:     {entry["time_created"]}")
+        print(f"Artifact Path:    {entry["artifact_path"]}")
+
+        print("\nMETRICS")
+        print(bar)
+
+        metrics = entry["metrics"]
+        print(f"val accuracy:     {metrics["acc"]:.4f}")
+        print(f"val loss:         {metrics["loss"]:.4f}")
+
+        print("\nHYPERPARAMETERS")
+        print(bar)
+
+        hyperparams = entry["hyperparameters"]
+        print(f"learning rate: {hyperparams["learning rate"]}")
+        print(f"epochs:        {hyperparams["epochs"]}")
+        print(f"weight decay:  {hyperparams["weight decay"]}")  
+        print(f"batch size:    {hyperparams["batch size"]}")
+
+
