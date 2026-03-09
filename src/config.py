@@ -24,3 +24,4 @@ class Config(dict):
         BASE = Path(__file__).resolve().parent.parent
         abs_path = BASE / self[path]
         return abs_path
+    

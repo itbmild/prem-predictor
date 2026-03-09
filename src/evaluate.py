@@ -47,7 +47,6 @@ def prepare_model() -> Tester:
     """ Loads model to be evaluated, returns Tester object """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     loader_manager = PLDataModule(train_path=TRAIN_DATA_PATH, test_path=TEST_DATA_PATH, scale=True)
-
     test_loader = loader_manager.get_test_loader()
     scaler = loader_manager.get_scaler()
 

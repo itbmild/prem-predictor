@@ -22,6 +22,8 @@ from registry.registry import ModelRegistry
 from registry.model_saver import ModelSaver
 from registry.model_loader import ModelLoader
 
+from models.tester import Evaluator
+
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
     def __init__(self, config_path):
@@ -100,20 +102,6 @@ class PipelineOrchestrator:
             metrics=metrics,
             hyperparams=trainer.get_hyperparams()
         )
-        
-        # lets check to see if our model has been stored with the correct hyperparameters
-        # what is needed for this? our reporting mechanism should belong to the registry class
-        # we should have a function in our registry that prints out valuable information about each model
-
-
-        # lists all of the trained models and their information
-        self.registry.list_models()
-
-        # describes the model with the given id, basically just prints the corresponding entry
-        self.registry.describe_model(model_id)
-
-
-        # trainer.save_model(self.config.model.save_path)
 
     def _setup_nn(self, model_config):
         train_matches = self.loader.load(model_config.training_path)
@@ -143,6 +131,10 @@ class PipelineOrchestrator:
     def evaluate(self, model_type: str):
         print("evaluating")
 
+        model_artifact = self.model_loader.load_artifact("20260309_115655")
+
+        evaluator = self._setup_nn_eval(model_artifact)
+        evaluator.run_inference()
 
 
     def _get_nn_trainer(self, model_config):
@@ -170,7 +162,22 @@ class PipelineOrchestrator:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         # return f"model_{timestamp}"
         return timestamp
-        
+    
+    def _setup_nn_eval(self, model_artifact: dict) -> Evaluator:
+        print(model_artifact)
+        model = model_artifact["model"]
+
+        model_config = model_artifact["model_config"]
+        # dataloader setup
+        test_matches = self.loader.load(model_config.test_path)
+        scaler = model_artifact["scaler"]
+        test_dataset = PLDataset(test_matches, model_config, scaler)
+        test_loader = DataLoader(test_dataset, batch_size=model_config.batch_size)
+
+        evaluator = Evaluator(model, test_loader, self.device)
+        return evaluator
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="Premier League Predictor")

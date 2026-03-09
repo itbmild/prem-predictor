@@ -24,7 +24,7 @@ class ModelSaver:
 
         # save config used for model architecture / hyperparameters
         with open(artifact_path / "config.yaml", "w") as f:
-            yaml.dump(config, f)
+            yaml.dump(dict(config), f)
 
         # save metrics so model can be compared to other models
         with open(artifact_path / "metrics.json", "w") as f:

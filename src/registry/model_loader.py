@@ -17,7 +17,7 @@ class ModelLoader:
 
         Artifact identified by ID and path is resolved through registry
         """
-        entry = self.registry.get(model_id) # registry entry, we need artifact path
+        entry = self.registry.get_model(model_id) # registry entry, we need artifact path
 
         if entry is None:
             raise ValueError(f"Model with ID: '{model_id}' does not exist")
