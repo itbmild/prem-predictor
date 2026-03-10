@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
-from .constants import PREM_FEATURES, PREM_LABELS, PREM_EVAL_LABELS, PREM_COLS_TO_DROP
-from processing.loader import Loader
+# from ..models.constants import PREM_FEATURES, PREM_LABELS, PREM_EVAL_LABELS, PREM_COLS_TO_DROP
+from file_io.loader import Loader
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
  
@@ -50,33 +50,33 @@ class PLDataModule:
             self.fit_scaler()
 
 
-    def fit_scaler(self):
-        """ Fit scaler to the training data """
-        loader = Loader()
-        train_df = loader.load(self.train_path)
+    # def fit_scaler(self):
+    #     """ Fit scaler to the training data """
+    #     loader = Loader()
+    #     train_df = loader.load(self.train_path)
 
-        # need to change this 
-        # train_features = train_df.drop(columns=PREM_COLS_TO_DROP)
-        # to this
-        train_features = train_df[self.cfg.features]
-        print(len(train_features))
-        self.scaler.fit(train_features)
+    #     # need to change this 
+    #     # train_features = train_df.drop(columns=PREM_COLS_TO_DROP)
+    #     # to this
+    #     train_features = train_df[self.cfg.features]
+    #     print(len(train_features))
+    #     self.scaler.fit(train_features)
 
-    def get_train_loader(self):
-        """ Returns DataLoader object for training data """
-        dataset = PremierLeagueDataset(self.train_path, scaler=self.scaler)
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+    # def get_train_loader(self):
+    #     """ Returns DataLoader object for training data """
+    #     dataset = PremierLeagueDataset(self.train_path, scaler=self.scaler)
+    #     return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
-    def get_val_loader(self):
-        """ Returns DataLoader object for validation data """
-        dataset = PremierLeagueDataset(self.val_path, scaler=self.scaler)
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+    # def get_val_loader(self):
+    #     """ Returns DataLoader object for validation data """
+    #     dataset = PremierLeagueDataset(self.val_path, scaler=self.scaler)
+    #     return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
-    def get_test_loader(self):
-        """ Returns DataLoader object for test data """
-        dataset = PremierLeagueDataset(self.test_path, scaler=self.scaler, eval=True)
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=False) 
+    # def get_test_loader(self):
+    #     """ Returns DataLoader object for test data """
+    #     dataset = PremierLeagueDataset(self.test_path, scaler=self.scaler, eval=True)
+    #     return DataLoader(dataset, batch_size=self.batch_size, shuffle=False) 
     
-    def get_scaler(self):
-        return self.scaler
+    # def get_scaler(self):
+    #     return self.scaler
     

@@ -5,10 +5,10 @@ import random
 import numpy as np
 import pandas as pd
 
-from processing.loader import Loader
-from processing.writer import Writer
+from file_io.loader import Loader
+from file_io.writer import Writer
 
-from utils import PREDICTIONS_PATH, PROB_COLS, TEST_DATA_PATH, DATA_23, DATA_24, BET365, BET_365_C
+# from utils import PREDICTIONS_PATH, PROB_COLS, TEST_DATA_PATH, DATA_23, DATA_24, BET365, BET_365_C
 
 class MatchSimulator:
     def __init__(self, n_sims: int):
@@ -72,7 +72,7 @@ class MatchSimulator:
     def run_sim(self, predictions: pd.DataFrame) -> pd.DataFrame:
         """ Takes matches DataFrame and adds column for W/D/L probabilities """
         probs = predictions.apply(self.sim_match, axis=1, result_type='expand')
-        probs.columns = PROB_COLS
+        # probs.columns = PROB_COLS
         predictions = pd.concat([predictions, probs], axis=1)
         return predictions
     

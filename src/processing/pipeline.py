@@ -2,8 +2,8 @@
     Data pipeline
     Processes raw data and saves to files with defined loading, cleaning, feature and writer classes
 """
-from processing.loader import Loader
-from processing.writer import Writer
+from file_io.loader import Loader
+from file_io.writer import Writer
 from processing.transform import DataTransformer
 import pandas as pd
 

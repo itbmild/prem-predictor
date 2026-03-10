@@ -6,7 +6,7 @@ from sklearn.metrics import confusion_matrix, classification_report, ConfusionMa
 import matplotlib.pyplot as plt
 import numpy as np
 
-from models.loss import WDLClassificationMetric
+from metrics.loss import WDLClassificationMetric
 
 class WDLClassificationLoss(nn.Module):
     def __init__(self):
@@ -41,7 +41,6 @@ class Tester:
                 features, labels = features.to(self.device), labels.to(self.device)
 
                 outputs = self.model(features)
-
 
                 # if self.metric is not None:
                 count_correct, preds, true = self.metric(outputs, labels)

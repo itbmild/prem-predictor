@@ -1,10 +1,10 @@
 """ Entrypoint for running inference on test data """
-from models.tester import Tester
-from models.dataset import PLDataModule
-from models.loss import WDLClassificationMetric
+from evaluation.tester import Tester
+from dataset.dataset import PLDataModule
+from metrics.loss import WDLClassificationMetric
 from models.modules import NeuralNet
-from processing.writer import Writer
-from processing.loader import Loader
+from file_io.writer import Writer
+from file_io.loader import Loader
 import pandas as pd
 
 import torch

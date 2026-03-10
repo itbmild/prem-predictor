@@ -5,13 +5,15 @@ import pandas as pd
 import torch
 from datetime import datetime as dt
 from config import Config
-from processing.loader import Loader
-from processing.writer import Writer
+
+from file_io.loader import Loader
+from file_io.writer import Writer
+
 from processing.transform import DataTransformer
 from processing.features import RollingWindowFeatures, HeadToHeadFeatures, PrevSeasonFeatures
-from models.dataset import PLDataModule, PLDataset
-from pipeline import DataPipeline
-from models.trainer import NNTrainer
+from dataset.dataset import PLDataModule, PLDataset
+from processing.pipeline import DataPipeline
+from training.trainer import NNTrainer
 from models.modules import NeuralNet
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
@@ -22,7 +24,7 @@ from registry.registry import ModelRegistry
 from registry.model_saver import ModelSaver
 from registry.model_loader import ModelLoader
 
-from models.tester import Evaluator
+from evaluation.tester import Evaluator
 
 class PipelineOrchestrator:
     """ Orchestrator class for data processing / model training / model evaluation """
@@ -37,7 +39,6 @@ class PipelineOrchestrator:
         self.registry = ModelRegistry(self.config.registry_path)
         self.saver = ModelSaver(self.config.artifacts_path)
         self.model_loader = ModelLoader(self.registry)
-
 
         self.transformer = self._create_transformer()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -183,7 +184,10 @@ def main():
     parser = argparse.ArgumentParser(description="Premier League Predictor")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    parser.add_argument("--config", type=str, default="config.yaml", help="Path to config file")
+
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    DEFAULT_CONFIG = BASE_DIR / "configs/config.yaml"
+    parser.add_argument("--config", type=str, default=str(DEFAULT_CONFIG), help="Path to config file")
 
     # Data Pipeline command
     prepare_parser = subparsers.add_parser("prepare", help="Pre-processes raw match data")
