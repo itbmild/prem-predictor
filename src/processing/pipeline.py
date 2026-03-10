@@ -102,16 +102,10 @@ class DataPipeline:
         # need to find the cutoff indices for each ting
         train_cutoff = start_idx + int(train_p * rows)
         val_cutoff = int(val_p * rows) + train_cutoff
-        print(train_cutoff)
-
 
         train_df = df[start_idx:train_cutoff]
         val_df = df[train_cutoff:val_cutoff]
         test_df = df[val_cutoff:rows]
-
-        # print(len(train_df))
-        # print(len(val_df))
-        # print(len(test_df))
 
         return train_df, val_df, test_df
         

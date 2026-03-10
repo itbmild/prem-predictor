@@ -4,7 +4,10 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
+
+from pprint import pprint
 
 from metrics.loss import WDLClassificationMetric
 
@@ -107,8 +110,11 @@ class Evaluator:
     def run_inference(self):
         """Takes test data and runs inference through network
          
-        Prints accuracy and confusion matrix report
-        Plots confusion matrix
+        Outputs dictionary containing predictions and labels:
+        {
+          "predictions": list,
+          "labels": list    
+        }
         """
         self.model.eval()
         correct = 0
@@ -122,7 +128,6 @@ class Evaluator:
 
                 outputs = self.model(features)
 
-
                 # if self.metric is not None:
                 count_correct, preds, true = self.metric(outputs, labels)
 
@@ -131,10 +136,20 @@ class Evaluator:
 
                 all_labels.extend(true.cpu().numpy())
                 all_preds.extend(preds.cpu().numpy())
+        
+        return {
+            "predictions": all_preds,
+            "labels": all_labels,
+            "correct": correct,
+            "rows": total_rows
+        }
 
-            print(f"Accuracy (W/D/L): {100 * correct / total_rows:.2f}%")
-            self.cm_report(all_preds, all_labels)
-            self.plot_cm(all_preds, all_labels)
+            # print(f"Accuracy (W/D/L): {100 * correct / total_rows:.2f}%")
+            # self.cm_report(all_preds, all_labels)
+            # self.plot_cm(all_preds, all_labels)
+
+        # by this point we have reached the end of the inference, we have all of our predictions and our labels
+
     
     def raw_inference(self):
         """ Performs inference with model on given test loader
@@ -154,16 +169,17 @@ class Evaluator:
                 all_labels.append(labels.cpu().numpy())
         return np.concatenate(all_preds), np.concatenate(all_labels)
     
-    def cm_report(self, preds, labels):
+    def _generate_report(self, preds, labels):
         """ Prints confusion matrix report given inference results on test data """
         report = classification_report(
             labels,
             preds,
-            target_names=["Home Win", "Draw", "Away Win"]
+            target_names=["Home Win", "Draw", "Away Win"],
+            output_dict=True
         )
-        print(report)
+        return report
     
-    def plot_cm(self, preds, labels):
+    def _generate_confusion_matrix(self, preds, labels) -> Figure:
         """ plots confusion matrix for WDL classification """
         cm = confusion_matrix(labels, preds)
 
@@ -172,7 +188,53 @@ class Evaluator:
             display_labels=["Home Win", "Draw", "Away Win"]
         )
 
-        fig, ax = plt.subplots(figsize=(10,8))
-        disp.plot(cmap=plt.cm.Blues, ax=ax)
-        plt.title("Confusion Matrix for W/D/L classification")
-        plt.show()
+        # fig, ax = plt.subplots(figsize=(10,8))
+        disp.plot(cmap=plt.cm.Blues)
+        fig = disp.ax_.figure
+        return fig
+
+
+        # plt.title("Confusion Matrix for W/D/L classification")
+        # plt.show()
+
+    def _generate_figures(self, predictions: list, labels: list) -> list[Figure]:
+        """ Takes predictions and ground truth labels and returns list of figures """
+        figures = []
+
+        confusion_matrix = self._generate_confusion_matrix(predictions, labels)
+        figures.append(confusion_matrix)
+
+        # TODO add more figures here, could be useful to have ROC curves or other shit
+
+        return figures
+
+
+
+    def evaluate(self) -> dict:
+        """ Called by the orchestrator to run full evaluation logic
+         
+        Handles inference loop on test set and stores report
+        """
+
+        eval_output = self.run_inference()
+        
+        predictions = eval_output["predictions"]
+        labels = eval_output["labels"]
+
+        report = self._generate_report(predictions, labels)
+        figures = self._generate_figures(predictions, labels)
+
+
+        confusion_matrix = self._generate_confusion_matrix(predictions, labels)
+
+        # eval = self._get_eval(report, figures)
+
+        eval = {
+            "report": report,
+            "figures": {
+                "cm": confusion_matrix
+            }
+        }
+
+
+        return eval

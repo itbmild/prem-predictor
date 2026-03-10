@@ -22,7 +22,7 @@ class WDLClassificationMetric(nn.Module):
     Cross Entropy Loss between the predicted outcome based on xG and
     The true W/D/L outcome
     """
-    def __init__(self, threshold=0.1):
+    def __init__(self, threshold=0.2):
         super().__init__()
         self.threshold = threshold
 
@@ -36,11 +36,7 @@ class WDLClassificationMetric(nn.Module):
         Returns:
             torch.tensor: wdl encoding given by the predicted xG for the home team
             torch.tensor: correct 
-
         """
-        # print(f"shape of pred:{pred.shape}")
-        # print(f"type of pred: {type(pred)}")
-        # print(f"type of result: {type(results)}")
         diff = pred[:,0] - pred[:, 1] # score difference (home xG - away xG)
         wdl_encoding = torch.zeros(diff.shape[0], device=pred.device) 
 
@@ -73,7 +69,7 @@ class WDLClassificationMetric(nn.Module):
 
 
 if __name__ == "__main__":
-    metric = WDLClassificationMetric(threshold=0.1)
+    metric = WDLClassificationMetric(threshold=0.5)
 
     test_predictions = torch.tensor([
         [2.0, 1.0],

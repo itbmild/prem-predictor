@@ -1,5 +1,7 @@
 registry_path: "../models/registry.json"
 artifacts_path: "../models/trained"
+reports_path: "../reports"
+
 features:
   window_size: 5
   target_name_pairs:
@@ -70,7 +72,7 @@ model:
     # constants here for neural network
     lr: 0.001
     weight_decay: 0.0005
-    epochs: 10
+    epochs: 60
     batch_size: 64
     scale: True
     # feature columns

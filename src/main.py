@@ -24,6 +24,9 @@ from registry.registry import ModelRegistry
 from registry.model_saver import ModelSaver
 from registry.model_loader import ModelLoader
 
+# report saving
+from persistence.eval_store import EvaluationStore
+
 from evaluation.tester import Evaluator
 
 class PipelineOrchestrator:
@@ -39,6 +42,8 @@ class PipelineOrchestrator:
         self.registry = ModelRegistry(self.config.registry_path)
         self.saver = ModelSaver(self.config.artifacts_path)
         self.model_loader = ModelLoader(self.registry)
+
+        self.eval_store = EvaluationStore(self.config.reports_path)
 
         self.transformer = self._create_transformer()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -132,10 +137,12 @@ class PipelineOrchestrator:
     def evaluate(self, model_type: str):
         print("evaluating")
 
-        model_artifact = self.model_loader.load_artifact("20260309_115655")
+        model_artifact = self.model_loader.load_artifact("20260310_142839")
 
         evaluator = self._setup_nn_eval(model_artifact)
-        evaluator.run_inference()
+        # evaluator.run_inference() 
+        evaluator.evaluate()
+
 
 
     def _get_nn_trainer(self, model_config):
@@ -165,14 +172,15 @@ class PipelineOrchestrator:
         return timestamp
     
     def _setup_nn_eval(self, model_artifact: dict) -> Evaluator:
-        print(model_artifact)
         model = model_artifact["model"]
 
         model_config = model_artifact["model_config"]
         # dataloader setup
         test_matches = self.loader.load(model_config.test_path)
         scaler = model_artifact["scaler"]
-        test_dataset = PLDataset(test_matches, model_config, scaler)
+
+
+        test_dataset = PLDataset(test_matches, model_config, scaler, eval=True) # set eval flag to ensure W/D/L used 
         test_loader = DataLoader(test_dataset, batch_size=model_config.batch_size)
 
         evaluator = Evaluator(model, test_loader, self.device)
