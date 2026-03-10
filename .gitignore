@@ -6,3 +6,6 @@ bin/
 data/
 *.csv
 *.pth
+*.pkl
+*.json
+*.yaml
